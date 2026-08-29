@@ -31,7 +31,13 @@ type UserDTO struct {
 }
 
 func NewAuthService(db *store.Store, cfg *config.Config) (*AuthService, error) {
-	return &AuthService{store: db, cfg: cfg, loginAttempts: map[string][]time.Time{}}, nil
+	a := &AuthService{store: db, cfg: cfg, loginAttempts: map[string][]time.Time{}}
+	if cfg != nil && cfg.SessionPersistent {
+		if err := db.EnsureSessionPersistent(); err != nil {
+			return nil, err
+		}
+	}
+	return a, nil
 }
 
 func (a *AuthService) EnsureAdmin() error {
@@ -51,8 +57,9 @@ func (a *AuthService) EnsureAdmin() error {
 }
 
 func (a *AuthService) Login(username, password, clientIP string) (*store.User, error) {
-	trimUser := strings.TrimSpace(username)
-	if trimUser == "" || strings.TrimSpace(password) == "" {
+	trimUser := normalizeUsername(username)
+	trimPassword := strings.TrimSpace(password)
+	if trimUser == "" || trimPassword == "" {
 		return nil, errors.New("empty")
 	}
 	key := clientIP + ":" + trimUser
@@ -61,15 +68,24 @@ func (a *AuthService) Login(username, password, clientIP string) (*store.User, e
 	}
 	user, err := a.store.FindUserByUsername(trimUser)
 	if err != nil {
+		a.recordFailure(key)
 		return nil, errInvalidCreds
 	}
-	ok, err := verifyPassword(password, user.Salt, user.PasswordHash)
+	ok, err := verifyPassword(trimPassword, user.Salt, user.PasswordHash)
 	if err != nil || !ok {
 		a.recordFailure(key)
 		return nil, errInvalidCreds
 	}
 	a.clearFailure(key)
 	return user, nil
+}
+
+func (a *AuthService) ValidateToken(token string) (*store.User, bool) {
+	if strings.TrimSpace(token) == "" {
+		return nil, false
+	}
+	user, err := a.store.ValidateSession(token)
+	return user, err == nil && user != nil
 }
 
 func (a *AuthService) CurrentUserFromRequest(r *http.Request) (*store.User, string, error) {
@@ -85,8 +101,8 @@ func (a *AuthService) CurrentUserFromRequest(r *http.Request) (*store.User, stri
 	if token == "" {
 		return nil, "", errors.New("not authenticated")
 	}
-	user, err := a.store.ValidateSession(token)
-	if err != nil || user == nil {
+	user, ok := a.ValidateToken(token)
+	if !ok || user == nil {
 		return nil, "", errors.New("not authenticated")
 	}
 	return user, token, nil
@@ -96,7 +112,7 @@ func (a *AuthService) Logout(r *http.Request, w http.ResponseWriter) {
 	if token, err := sessionTokenFromRequest(r); err == nil {
 		_ = a.store.DeleteSessionByToken(hashToken(token))
 	}
-	clearSessionCookie(w)
+	clearSessionCookie(w, a.cfg != nil && a.cfg.CookieSecure)
 }
 
 func (a *AuthService) IssueSession(userID int64) (string, error) {
@@ -106,7 +122,7 @@ func (a *AuthService) IssueSession(userID int64) (string, error) {
 	}
 	tokenHash := hashToken(token)
 	expiresAt := time.Now().UTC().Add(7 * 24 * time.Hour).Format(time.RFC3339Nano)
-	if a.cfg.SessionPersistent {
+	if a.cfg != nil && a.cfg.SessionPersistent {
 		expiresAt = "9999-12-31T23:59:59.999Z"
 		if err := a.store.EnsureSessionPersistent(); err != nil {
 			return "", err
@@ -118,10 +134,17 @@ func (a *AuthService) IssueSession(userID int64) (string, error) {
 	return token, nil
 }
 
-func (a *AuthService) SetSessionCookie(w http.ResponseWriter, token string) {
-	maxAge := 7 * 24 * 60 * 60
-	if a.cfg.SessionPersistent {
-		maxAge = 315360000
+// SetSessionCookie ghi cookie phiên đăng nhập.
+// - remember == true: cookie tồn tại lâu dài (10 năm nếu bật SESSION_PERSISTENT,
+//   ngược lại 7 ngày), người dùng không phải đăng nhập lại mỗi lần mở trình duyệt.
+// - remember == false: cookie chỉ tồn tại trong phiên trình duyệt hiện tại.
+func (a *AuthService) SetSessionCookie(w http.ResponseWriter, token string, remember bool) {
+	maxAge := 0
+	if remember {
+		maxAge = 7 * 24 * 60 * 60
+		if a.cfg.SessionPersistent {
+			maxAge = 315360000
+		}
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "huz_session",
@@ -154,6 +177,10 @@ func (a *AuthService) ChangePassword(userID int64, currentPassword, newPassword 
 		return err
 	}
 	return nil
+}
+
+func (a *AuthService) RevokeOtherSessions(userID int64, keepToken string) error {
+	return a.store.DeleteSessionsForUserExcept(userID, hashToken(keepToken))
 }
 
 func (a *AuthService) isRateLimited(key string) bool {
@@ -251,13 +278,13 @@ func ClientIP(r *http.Request) string {
 	return "unknown"
 }
 
-func clearSessionCookie(w http.ResponseWriter) {
+func clearSessionCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "huz_session",
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
@@ -301,10 +328,12 @@ func UserFromContext(ctx context.Context) *store.User {
 }
 
 func (a *AuthService) LoginJSON(username, password, clientIP string) (int, map[string]any) {
-	if strings.TrimSpace(username) == "" || strings.TrimSpace(password) == "" {
+	trimUser := normalizeUsername(username)
+	trimPass := strings.TrimSpace(password)
+	if trimUser == "" || trimPass == "" {
 		return http.StatusBadRequest, map[string]any{"message": "Vui lòng nhập tên đăng nhập và mật khẩu"}
 	}
-	user, err := a.Login(username, password, clientIP)
+	user, err := a.Login(trimUser, trimPass, clientIP)
 	if err != nil {
 		if errors.Is(err, errRateLimit) {
 			return http.StatusTooManyRequests, map[string]any{"message": "Quá nhiều lần đăng nhập sai, vui lòng thử lại sau 15 phút"}
@@ -328,4 +357,15 @@ func parseInt64(v string) int64 {
 		return i
 	}
 	return 0
+}
+
+func normalizeUsername(v string) string {
+	if v == "" {
+		return ""
+	}
+	trimmed := strings.TrimSpace(v)
+	if len(trimmed) > 64 {
+		return trimmed[:64]
+	}
+	return trimmed
 }

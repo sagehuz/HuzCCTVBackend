@@ -3,32 +3,156 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <meta name="color-scheme" content="dark" />
+    <title>Đăng nhập · Huz CCTV</title>
+    <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <h2>Đăng nhập</h2>
-    <form id="loginForm">
-      <input name="username" placeholder="Tên đăng nhập" />
-      <input name="password" type="password" placeholder="Mật khẩu" />
-      <button type="submit">Đăng nhập</button>
-    </form>
+    <header class="site-header" id="app-header"></header>
+
+    <main class="auth-shell">
+      <section class="auth-card" aria-label="Đăng nhập">
+        <div class="auth-brand">
+          <span class="brand-mark"></span>
+          <h1>Huz CCTV</h1>
+          <p>Đăng nhập để tiếp tục quản lý hệ thống giám sát</p>
+        </div>
+
+        <div class="alert alert-error hidden" id="loginError" role="alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <span id="loginErrorText"></span>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="username">Tên đăng nhập</label>
+            <input
+              class="form-control"
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Nhập tên đăng nhập"
+              autocomplete="username"
+              required
+              autofocus
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Mật khẩu</label>
+            <div class="password-wrap">
+              <input
+                class="form-control"
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Nhập mật khẩu"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                id="togglePassword"
+                aria-label="Hiện / ẩn mật khẩu"
+              >
+                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <label class="checkbox-row mb-1">
+            <input type="checkbox" id="remember" checked />
+            <span>Ghi nhớ đăng nhập trên trình duyệt này</span>
+          </label>
+          <p class="text-muted" style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5">
+            Phiên đăng nhập sẽ được duy trì lâu dài, bạn không cần đăng nhập lại mỗi lần mở trang.
+          </p>
+
+          <button class="btn btn-primary btn-block mt-3" id="submitBtn" type="submit">
+            <span>Đăng nhập</span>
+          </button>
+        </form>
+
+        <div class="auth-divider">Hệ thống giám sát</div>
+        <p class="footer-note">© <span id="year"></span> Huz CCTV · An toàn · Bảo mật · Ổn định</p>
+      </section>
+    </main>
+
+    <script src="/js/common.js"></script>
     <script>
-      document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = new FormData(e.target);
-        const body = { username: form.get('username'), password: form.get('password') };
-        const resp = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(body)
-        });
-        const data = await resp.json();
-        if (resp.ok) {
-          window.location.href = '/devices.html';
-        } else {
-          alert(data.message || 'Lỗi');
+      (function () {
+        'use strict';
+
+        var form = document.getElementById('loginForm');
+        var usernameEl = document.getElementById('username');
+        var passwordEl = document.getElementById('password');
+        var rememberEl = document.getElementById('remember');
+        var toggleBtn = document.getElementById('togglePassword');
+        var submitBtn = document.getElementById('submitBtn');
+        var errorBox = document.getElementById('loginError');
+        var errorText = document.getElementById('loginErrorText');
+
+        document.getElementById('year').textContent = String(new Date().getFullYear());
+
+        function showError(message) {
+          errorText.textContent = message || 'Đã có lỗi xảy ra, vui lòng thử lại.';
+          errorBox.classList.remove('hidden');
         }
-      });
+
+        function hideError() {
+          errorBox.classList.add('hidden');
+        }
+
+        toggleBtn.addEventListener('click', function () {
+          var isPassword = passwordEl.type === 'password';
+          passwordEl.type = isPassword ? 'text' : 'password';
+          toggleBtn.setAttribute('aria-label', isPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+          toggleBtn.innerHTML = isPassword
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="m1 1 22 22"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
+        });
+
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          hideError();
+
+          var username = usernameEl.value.trim();
+          var password = passwordEl.value;
+          if (!username || !password) {
+            showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.');
+            return;
+          }
+
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>Đang đăng nhập…</span>';
+
+          try {
+            await HuzApp.api('/api/auth/login', {
+              method: 'POST',
+              body: {
+                username: username,
+                password: password,
+                remember: rememberEl.checked,
+              },
+            });
+            localStorage.setItem('huz_authed', '1');
+            window.location.href = HuzApp.loginRedirect();
+          } catch (err) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Đăng nhập</span>';
+            showError(err.message || 'Đăng nhập thất bại.');
+            passwordEl.select();
+          }
+        });
+
+        HuzApp.init({ requireAuth: false }).then(function (user) {
+          if (user) {
+            window.location.href = HuzApp.loginRedirect();
+          }
+        });
+      })();
     </script>
   </body>
 </html>
+

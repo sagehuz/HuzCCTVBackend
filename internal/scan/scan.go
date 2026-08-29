@@ -53,7 +53,10 @@ func (s *Scanner) NetworkDevices() (map[string]any, error) {
 		return nil, fmt.Errorf("no network interface")
 	}
 
-	_ = getHostRange(candidates[0])
+	// Sweep only the host range and then enrich ARP data with vendor and reverse DNS.
+	for _, candidate := range candidates {
+		_ = getHostRange(candidate)
+	}
 	arpEntries, err := readARPTable()
 	if err != nil {
 		return nil, err
@@ -66,9 +69,9 @@ func (s *Scanner) NetworkDevices() (map[string]any, error) {
 		ent.Vendor = oui.LookupVendor(ent.MAC)
 		if ent.Hostname == "" {
 			ctx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
-			defer cancel()
-			hosts, err := net.DefaultResolver.LookupAddr(ctx, ent.IP)
-			if err == nil && len(hosts) > 0 {
+			hosts, lookupErr := net.DefaultResolver.LookupAddr(ctx, ent.IP)
+			cancel()
+			if lookupErr == nil && len(hosts) > 0 {
 				ent.Hostname = hosts[0]
 			}
 		}

@@ -2,15 +2,16 @@ package web
 
 import (
 	"context"
-	"embed"
 	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -27,10 +28,11 @@ type Handler struct {
 	scanner *scan.Scanner
 	hub    *signal.Hub
 	static fs.FS
+	startedAt time.Time
 }
 
 func NewHandler(cfg *config.Config, authSvc *auth.AuthService, scanner *scan.Scanner, hub *signal.Hub, static fs.FS) *Handler {
-	return &Handler{cfg: cfg, auth: authSvc, scanner: scanner, hub: hub, static: static}
+	return &Handler{cfg: cfg, auth: authSvc, scanner: scanner, hub: hub, static: static, startedAt: time.Now()}
 }
 
 func (h *Handler) Mux() http.Handler {
@@ -41,6 +43,7 @@ func (h *Handler) Mux() http.Handler {
 	mux.HandleFunc("/api/auth/me", h.requireAuth(h.me))
 	mux.HandleFunc("/api/auth/change-password", h.requireAuth(h.changePassword))
 	mux.HandleFunc("/api/network-devices", h.requireAuth(h.networkDevices))
+	mux.HandleFunc("/api/server-info", h.requireAuth(h.serverInfo))
 	mux.HandleFunc("/ws/signal", h.hub.HandleWS)
 	mux.HandleFunc("/", h.serveStatic)
 	return mux
@@ -48,7 +51,7 @@ func (h *Handler) Mux() http.Handler {
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Server Node.js đang chạy thành công trên Ubuntu!"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Server đang chạy thành công"})
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
@@ -56,17 +59,23 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	var body map[string]string
+	var body map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Vui lòng nhập tên đăng nhập và mật khẩu"})
 		return
 	}
-	code, resp := h.auth.LoginJSON(body["username"], body["password"], auth.ClientIP(r))
+	username, _ := body["username"].(string)
+	password, _ := body["password"].(string)
+	remember := true
+	if v, ok := body["remember"].(bool); ok {
+		remember = v
+	}
+	code, resp := h.auth.LoginJSON(username, password, auth.ClientIP(r))
 	if code == http.StatusOK {
 		token := fmt.Sprint(resp["token"])
-		h.auth.SetSessionCookie(w, token)
+		h.auth.SetSessionCookie(w, token, remember)
 		delete(resp, "token")
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -135,6 +144,11 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Mật khẩu hiện tại không đúng"})
 		return
 	}
+	if token, err := r.Cookie("huz_session"); err == nil && token.Value != "" {
+		if err := h.auth.RevokeOtherSessions(user.ID, token.Value); err != nil {
+			log.Printf("revoke sessions: %v", err)
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Đã đổi mật khẩu thành công"})
 }
@@ -159,15 +173,85 @@ func (h *Handler) networkDevices(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
+func (h *Handler) serverInfo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	hostname, _ := os.Hostname()
+	ips, primaryIP := localIPv4s()
+	info := map[string]any{
+		"hostname":   hostname,
+		"ip":         primaryIP,
+		"ips":        ips,
+		"port":       h.cfg.Port,
+		"uptime":     int64(time.Since(h.startedAt).Seconds()),
+		"started_at": h.startedAt.UTC().Format(time.RFC3339),
+		"now":        time.Now().UTC().Format(time.RFC3339),
+		"os":         runtime.GOOS,
+		"arch":       runtime.GOARCH,
+		"go_version": runtime.Version(),
+		"num_cpu":    runtime.NumCPU(),
+		"version":    "2026.1",
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(info)
+}
+
+func localIPv4s() ([]string, string) {
+	ifs, err := net.Interfaces()
+	if err != nil {
+		return nil, ""
+	}
+	var ips []string
+	var primary string
+	for _, i := range ifs {
+		if i.Flags&net.FlagUp == 0 || i.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := i.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, a := range addrs {
+			ipnet, ok := a.(*net.IPNet)
+			if !ok || ipnet == nil || ipnet.IP == nil {
+				continue
+			}
+			v4 := ipnet.IP.To4()
+			if v4 == nil {
+				continue
+			}
+			ip := v4.String()
+			if ip == "" {
+				continue
+			}
+			ips = append(ips, ip)
+			if primary == "" {
+				primary = ip
+			}
+		}
+	}
+	return ips, primary
+}
+
 func (h *Handler) serveStatic(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	if path == "" {
 		path = "index.html"
 	}
-	if path == "camera.html" || path == "devices.html" {
+	// Các trang yêu cầu đăng nhập.
+	if path == "index.html" || path == "camera.html" || path == "devices.html" {
 		if _, _, err := h.auth.CurrentUserFromRequest(r); err != nil {
 			redirectPath := url.QueryEscape(r.URL.Path)
 			http.Redirect(w, r, "/login.html?next="+redirectPath, http.StatusFound)
+			return
+		}
+	}
+	// Người đã đăng nhập ghé trang login thì đưa về trang chủ.
+	if path == "login.html" {
+		if _, _, err := h.auth.CurrentUserFromRequest(r); err == nil {
+			http.Redirect(w, r, "/index.html", http.StatusFound)
 			return
 		}
 	}
@@ -204,11 +288,4 @@ func contextWithUser(ctx context.Context, user *store.User) context.Context {
 func userFromContext(ctx context.Context) *store.User {
 	user, _ := ctx.Value(userKey{}).(*store.User)
 	return user
-}
-
-func init() {
-	_ = os.Stdout
-	_ = embed.FS{}
-	_ = log.Println
-	_ = time.Now
 }

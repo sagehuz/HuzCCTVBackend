@@ -3,16 +3,170 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Devices</title>
+    <meta name="color-scheme" content="dark" />
+    <title>Thiết bị mạng · Huz CCTV</title>
+    <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <h2>Danh sách thiết bị</h2>
-    <div id="devices"></div>
+    <header class="site-header" id="app-header"></header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Thiết bị mạng</h1>
+          <p class="page-sub">Danh sách thiết bị được phát hiện trên mạng LAN hiện tại.</p>
+        </div>
+        <div class="row-actions">
+          <span class="badge badge-online" id="countBadge"><span class="status-dot"></span><span id="countText">0 thiết bị</span></span>
+          <button class="btn btn-ghost" id="refreshBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            <span>Quét lại</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Danh sách thiết bị <span class="hint" id="lastUpdated"></span></div>
+        </div>
+
+        <div class="state-box" id="loadingState">
+          <div class="spinner"></div>
+          <div>
+            <div class="state-title">Đang quét mạng LAN…</div>
+            <div>Quá trình này có thể mất vài giây</div>
+          </div>
+        </div>
+
+        <div class="state-box hidden" id="emptyState">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <div>
+            <div class="state-title">Không tìm thấy thiết bị</div>
+            <div>Kiểm tra card mạng và thử quét lại.</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="retryEmptyBtn" type="button">Quét lại</button>
+        </div>
+
+        <div class="state-box hidden" id="errorState">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <div>
+            <div class="state-title">Không thể quét thiết bị</div>
+            <div id="errorMessage">Đã có lỗi xảy ra.</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="retryErrorBtn" type="button">Thử lại</button>
+        </div>
+
+        <div class="table-wrap hidden" id="tableWrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Địa chỉ IP</th>
+                <th>Địa chỉ MAC</th>
+                <th>Nhà sản xuất</th>
+                <th>Hostname</th>
+                <th>Giao diện</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="deviceBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+
+    <script src="/js/common.js"></script>
     <script>
-      fetch('/api/network-devices').then(async (r) => {
-        const data = await r.json();
-        document.getElementById('devices').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-      });
+      (function () {
+        'use strict';
+
+        var loadingState = document.getElementById('loadingState');
+        var emptyState = document.getElementById('emptyState');
+        var errorState = document.getElementById('errorState');
+        var tableWrap = document.getElementById('tableWrap');
+        var deviceBody = document.getElementById('deviceBody');
+        var countText = document.getElementById('countText');
+        var lastUpdated = document.getElementById('lastUpdated');
+        var errorMessage = document.getElementById('errorMessage');
+
+        function setState(which) {
+          loadingState.classList.add('hidden');
+          emptyState.classList.add('hidden');
+          errorState.classList.add('hidden');
+          tableWrap.classList.add('hidden');
+          if (which) which.classList.remove('hidden');
+        }
+
+        function vendorOf(device) {
+          return device.vendor ? HuzApp.esc(device.vendor) : '<span class="text-muted">Không rõ</span>';
+        }
+
+        function hostnameOf(device) {
+          return device.hostname ? HuzApp.esc(device.hostname) : '<span class="text-muted">–</span>';
+        }
+
+        function stateBadge(device) {
+          var state = (device.state || 'reachable').toLowerCase();
+          if (state === 'reachable' || state === 'online' || state === 'up') {
+            return '<span class="badge badge-online"><span class="status-dot"></span>Trực tuyến</span>';
+          }
+          if (state === 'stale' || state === 'incomplete') {
+            return '<span class="badge badge-warn">' + HuzApp.esc(state) + '</span>';
+          }
+          return '<span class="badge badge-offline">' + HuzApp.esc(state) + '</span>';
+        }
+
+        function renderDevices(data) {
+          var devices = (data && Array.isArray(data.devices)) ? data.devices : [];
+          countText.textContent = devices.length + ' thiết bị';
+
+          if (!devices.length) {
+            setState(emptyState);
+            return;
+          }
+
+          deviceBody.innerHTML = devices
+            .map(function (d) {
+              return (
+                '<tr>' +
+                '<td class="mono">' + HuzApp.esc(d.ip || '–') + '</td>' +
+                '<td class="mono text-2">' + HuzApp.esc(d.mac || '–') + '</td>' +
+                '<td>' + vendorOf(d) + '</td>' +
+                '<td>' + hostnameOf(d) + '</td>' +
+                '<td class="text-2">' + HuzApp.esc(d.iface || '–') + '</td>' +
+                '<td>' + stateBadge(d) + '</td>' +
+                '</tr>'
+              );
+            })
+            .join('');
+
+          setState(tableWrap);
+        }
+
+        function load() {
+          setState(loadingState);
+          lastUpdated.textContent = '';
+
+          HuzApp.api('/api/network-devices')
+            .then(function (data) {
+              renderDevices(data);
+              lastUpdated.textContent = '· Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN');
+            })
+            .catch(function (err) {
+              setState(errorState);
+              errorMessage.textContent =
+                (err && err.message) || 'Không thể kết nối tới backend.';
+            });
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', load);
+        document.getElementById('retryEmptyBtn').addEventListener('click', load);
+        document.getElementById('retryErrorBtn').addEventListener('click', load);
+
+        HuzApp.init({ requireAuth: true }).then(function (user) {
+          if (user) load();
+        });
+      })();
     </script>
   </body>
 </html>

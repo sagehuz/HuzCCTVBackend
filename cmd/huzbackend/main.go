@@ -42,7 +42,10 @@ func main() {
 	}
 
 	scanner := scan.NewScanner()
-	hub := signal.NewHub()
+	hub := signal.NewHub(func(token string) bool {
+		_, ok := authSvc.ValidateToken(token)
+		return ok
+	})
 	staticFS, err := fs.Sub(publicFS, "public")
 	if err != nil {
 		log.Fatalf("không thể khởi tạo static FS: %v", err)

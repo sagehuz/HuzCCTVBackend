@@ -3,10 +3,618 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Camera</title>
+    <meta name="color-scheme" content="dark" />
+    <title>Camera · Huz CCTV</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      .toolbar h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #bbf7d0;
+      }
+
+      .pill.warn {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #fde68a;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+      /* Mỗi thiết bị một ô video, xếp dọc nối tiếp nhau */
+      .camera-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .camera-cell {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: rgba(13, 22, 38, 0.75);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+
+      .camera-cell-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+
+      .camera-cell-name {
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--text);
+      }
+
+      .camera-cell-id {
+        font-size: 11.5px;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin-top: 3px;
+      }
+
+      .camera-cell-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .camera-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .camera-badge::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+      }
+
+      .camera-badge.ok {
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #bbf7d0;
+      }
+
+      .camera-badge.warn {
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: #fde68a;
+      }
+
+      .camera-badge.err {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #fecaca;
+      }
+      .camera-cell-body {
+        position: relative;
+        background: #020817;
+        aspect-ratio: 16 / 9;
+        min-height: 300px;
+      }
+
+      .camera-cell-body video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: contain;
+        background: #020817;
+      }
+
+      .camera-cell-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13.5px;
+        text-align: center;
+        padding: 24px;
+        background: rgba(2, 8, 23, 0.82);
+        z-index: 2;
+      }
+
+      .camera-cell-overlay.hidden {
+        display: none;
+      }
+
+      .camera-cell-overlay .spinner {
+        width: 30px;
+        height: 30px;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        color: var(--muted);
+        font-size: 15px;
+        text-align: center;
+        padding: 80px 24px;
+        border: 1px dashed var(--border-strong);
+        border-radius: var(--radius-lg);
+        background: rgba(13, 22, 38, 0.4);
+      }
+
+      .empty-state svg {
+        width: 52px;
+        height: 52px;
+        opacity: 0.6;
+      }
+
+      @media (max-width: 720px) {
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .camera-cell-body {
+          min-height: 210px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <h2>Camera</h2>
-    <p>Trang xem camera.</p>
+    <header class="site-header" id="app-header"></header>
+
+    <main class="page">
+      <div class="toolbar">
+        <h2 id="cameraTitle">Camera</h2>
+        <div class="toolbar-actions">
+          <div class="pill" id="statusPill">
+            <span class="status-dot"></span>
+            <span id="statusText">Đang chờ</span>
+          </div>
+          <button class="btn btn-ghost" id="refreshBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            <span>Làm mới</span>
+          </button>
+          <button class="btn btn-primary" id="connectAllBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            <span>Kết nối tất cả</span>
+          </button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Tổng thiết bị</div>
+          <div id="totalDevices" class="stat-value small">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Đang xem</div>
+          <div id="streamingCount" class="stat-value small">0/0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Trạng thái kết nối</div>
+          <div id="connectionStatus" class="stat-value small">Offline</div>
+        </div>
+      </div>
+
+      <div class="camera-grid" id="videoGrid">
+        <div class="empty-state" id="emptyState">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>
+          <div>Chưa có thiết bị camera nào kết nối.<br />Khi thiết bị kết nối, luồng video sẽ tự động hiển thị tại đây.</div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/js/common.js"></script>
+    <script>
+      (function () {
+        'use strict';
+
+        var gridEl = document.getElementById('videoGrid');
+        var emptyStateEl = document.getElementById('emptyState');
+        var statusTextEl = document.getElementById('statusText');
+        var statusPillEl = document.getElementById('statusPill');
+        var connectionStatusEl = document.getElementById('connectionStatus');
+        var totalDevicesEl = document.getElementById('totalDevices');
+        var streamingCountEl = document.getElementById('streamingCount');
+        var refreshBtn = document.getElementById('refreshBtn');
+        var connectAllBtn = document.getElementById('connectAllBtn');
+
+        var deviceList = [];
+        var peerConnections = {};
+        var streamingIds = {};
+        var socket = null;
+        var wsConnected = false;
+
+        var rtcConfiguration = {
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        };
+        function updateStatus(text, connected) {
+          wsConnected = !!connected;
+          statusTextEl.textContent = text;
+          connectionStatusEl.textContent = connected ? 'Online' : 'Offline';
+          statusPillEl.classList.toggle('warn', !connected);
+        }
+
+        function send(payload) {
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(payload));
+          }
+        }
+
+        function esc(v) {
+          return HuzApp.esc(v);
+        }
+
+        function updateStats() {
+          totalDevicesEl.textContent = String(deviceList.length);
+          streamingCountEl.textContent =
+            Object.keys(streamingIds).length + '/' + deviceList.length;
+        }
+
+        function getCell(id) {
+          return gridEl.querySelector('.camera-cell[data-id="' + id + '"]');
+        }
+
+        function getVideo(id) {
+          var cell = getCell(id);
+          return cell ? cell.querySelector('video') : null;
+        }
+
+        function getBadge(id) {
+          var cell = getCell(id);
+          return cell ? cell.querySelector('.camera-badge') : null;
+        }
+
+        function getOverlay(id) {
+          var cell = getCell(id);
+          return cell ? cell.querySelector('.camera-cell-overlay') : null;
+        }
+
+        function setBadge(id, text, kind) {
+          var badge = getBadge(id);
+          if (!badge) return;
+          badge.textContent = text;
+          badge.className = 'camera-badge ' + (kind || 'warn');
+        }
+
+        function showOverlay(id, text) {
+          var overlay = getOverlay(id);
+          if (!overlay) return;
+          var label = overlay.querySelector('.overlay-text');
+          if (label) label.textContent = text;
+          overlay.classList.remove('hidden');
+        }
+
+        function hideOverlay(id) {
+          var overlay = getOverlay(id);
+          if (overlay) overlay.classList.add('hidden');
+        }
+
+        function markStreaming(id, on) {
+          if (on) {
+            streamingIds[id] = true;
+          } else {
+            delete streamingIds[id];
+          }
+          updateStats();
+        }
+
+        function createCell(device) {
+          if (getCell(device.id)) return;
+
+          var cell = document.createElement('div');
+          cell.className = 'camera-cell';
+          cell.setAttribute('data-id', device.id);
+
+          var head = document.createElement('div');
+          head.className = 'camera-cell-head';
+          head.innerHTML =
+            '<div style="min-width: 0">' +
+            '<div class="camera-cell-name">' +
+            esc(device.name || 'Camera') +
+            '</div>' +
+            '<div class="camera-cell-id">' +
+            esc(device.deviceId || device.id) +
+            '</div></div>' +
+            '<div class="camera-cell-actions">' +
+            '<span class="camera-badge warn">Đang chờ…</span>' +
+            '<button class="btn btn-ghost btn-sm" type="button" data-action="reconnect">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>' +
+            '<span>Kết nối lại</span></button>' +
+            '</div>';
+
+          var body = document.createElement('div');
+          body.className = 'camera-cell-body';
+          body.innerHTML =
+            '<video playsinline autoplay muted></video>' +
+            '<div class="camera-cell-overlay">' +
+            '<div class="spinner"></div>' +
+            '<span class="overlay-text">Đang kết nối…</span>' +
+            '</div>';
+
+          cell.appendChild(head);
+          cell.appendChild(body);
+
+          head
+            .querySelector('[data-action="reconnect"]')
+            .addEventListener('click', function () {
+              reconnectDevice(device);
+            });
+
+          gridEl.appendChild(cell);
+        }
+
+        function removeCell(id) {
+          closePeerConnection(id);
+          delete streamingIds[id];
+          var cell = getCell(id);
+          if (cell) cell.remove();
+          updateStats();
+        }
+        function connectToDevice(device) {
+          if (!device || !device.id || !socket) return;
+          var video = getVideo(device.id);
+          if (video) video.srcObject = null;
+          setBadge(device.id, 'Đang chờ phản hồi…', 'warn');
+          showOverlay(device.id, 'Đang kết nối…');
+          markStreaming(device.id, false);
+          send({ type: 'watch', targetId: device.id });
+        }
+
+        function reconnectDevice(device) {
+          if (!device) return;
+          closePeerConnection(device.id);
+          connectToDevice(device);
+        }
+
+        function closePeerConnection(id) {
+          var pc = peerConnections[id];
+          if (pc) {
+            pc.ontrack = null;
+            pc.onicecandidate = null;
+            pc.onconnectionstatechange = null;
+            try {
+              pc.close();
+            } catch (_e) {
+              /* ignore */
+            }
+            delete peerConnections[id];
+          }
+          var video = getVideo(id);
+          if (video) video.srcObject = null;
+        }
+
+        function closeAllConnections() {
+          Object.keys(peerConnections).forEach(function (id) {
+            closePeerConnection(id);
+          });
+        }
+
+        function renderDevices() {
+          var present = {};
+          deviceList.forEach(function (d) {
+            present[d.id] = true;
+          });
+
+          // Gỡ các ô không còn trong danh sách thiết bị.
+          Array.prototype.forEach.call(
+            gridEl.querySelectorAll('.camera-cell'),
+            function (cell) {
+              var id = cell.getAttribute('data-id');
+              if (id && !present[id]) removeCell(id);
+            }
+          );
+
+          // Thêm ô mới và kết nối tự động cho thiết bị mới.
+          deviceList.forEach(function (device) {
+            var isNew = !getCell(device.id);
+            createCell(device);
+            if (isNew) connectToDevice(device);
+          });
+
+          updateStats();
+          emptyStateEl.style.display = deviceList.length ? 'none' : 'flex';
+        }
+
+        async function acceptOffer(message) {
+          if (!message.from || !message.sdp) return;
+          if (!getCell(message.from)) {
+            // Offer từ thiết bị không còn trong danh sách — bỏ qua.
+            return;
+          }
+
+          closePeerConnection(message.from);
+          var pc = new RTCPeerConnection(rtcConfiguration);
+          peerConnections[message.from] = pc;
+
+          pc.ontrack = function (event) {
+            var stream = event.streams && event.streams[0];
+            if (!stream) return;
+            var video = getVideo(message.from);
+            if (video) {
+              video.srcObject = stream;
+              video.play().catch(function () {});
+            }
+            hideOverlay(message.from);
+            setBadge(message.from, 'Đang xem trực tiếp', 'ok');
+            markStreaming(message.from, true);
+          };
+
+          pc.onicecandidate = function (event) {
+            if (!event.candidate || !socket || socket.readyState !== WebSocket.OPEN) return;
+            send({
+              type: 'ice-candidate',
+              targetId: message.from,
+              candidate: event.candidate.toJSON(),
+            });
+          };
+
+          pc.onconnectionstatechange = function () {
+            var current = peerConnections[message.from];
+            if (!current || current !== pc) return;
+            var state = pc.connectionState;
+            if (state === 'connected') {
+              if (!streamingIds[message.from]) {
+                setBadge(message.from, 'Đã kết nối', 'ok');
+              }
+            } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+              markStreaming(message.from, false);
+              setBadge(message.from, 'Mất kết nối', 'err');
+              showOverlay(message.from, 'Mất kết nối luồng video');
+            }
+          };
+
+          await pc.setRemoteDescription(message.sdp);
+          var answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          send({
+            type: 'answer',
+            targetId: message.from,
+            sdp: { type: answer.type, sdp: answer.sdp },
+          });
+        }
+
+        async function addIceCandidate(message) {
+          if (!message.from || !message.candidate) return;
+          var pc = peerConnections[message.from];
+          if (!pc) return;
+          await pc.addIceCandidate(message.candidate);
+        }
+        function initSocket() {
+          socket = new WebSocket(
+            (location.protocol === 'https:' ? 'wss' : 'ws') +
+              '://' +
+              location.host +
+              '/ws/signal'
+          );
+
+          socket.addEventListener('open', function () {
+            updateStatus('Đã kết nối', true);
+            send({ type: 'register', role: 'viewer', name: 'Trình duyệt CCTV' });
+          });
+
+          socket.addEventListener('message', function (event) {
+            var msg;
+            try {
+              msg = JSON.parse(event.data);
+            } catch (_e) {
+              return;
+            }
+            if (!msg || !msg.type) return;
+
+            if (msg.type === 'device-list') {
+              deviceList = Array.isArray(msg.devices) ? msg.devices : [];
+              renderDevices();
+              return;
+            }
+
+            if (msg.type === 'error') {
+              updateStatus(msg.message || 'Lỗi kết nối', wsConnected);
+              return;
+            }
+
+            if (msg.type === 'registered') {
+              updateStatus('Sẵn sàng', true);
+              return;
+            }
+
+            if (msg.type === 'offer') {
+              acceptOffer(msg).catch(function (err) {
+                console.error('WebRTC offer failed', err);
+                if (msg.from) {
+                  setBadge(msg.from, 'Không thể kết nối', 'err');
+                  showOverlay(msg.from, 'Không thể kết nối luồng video');
+                }
+              });
+              return;
+            }
+
+            if (msg.type === 'ice-candidate') {
+              addIceCandidate(msg).catch(function (err) {
+                console.error('WebRTC ICE candidate failed', err);
+              });
+            }
+          });
+
+          socket.addEventListener('close', function () {
+            closeAllConnections();
+            streamingIds = {};
+            updateStats();
+            updateStatus('Mất kết nối', false);
+          });
+
+          socket.addEventListener('error', function () {
+            updateStatus('Lỗi WebSocket', false);
+          });
+        }
+
+        refreshBtn.addEventListener('click', function () {
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            send({ type: 'register', role: 'viewer', name: 'Trình duyệt CCTV' });
+            updateStatus('Làm mới danh sách', true);
+          }
+        });
+
+        connectAllBtn.addEventListener('click', function () {
+          deviceList.forEach(function (device) {
+            reconnectDevice(device);
+          });
+          updateStatus('Đang kết nối lại tất cả…', true);
+        });
+
+        HuzApp.init({ requireAuth: true }).then(function (user) {
+          if (user) initSocket();
+        });
+      })();
+    </script>
   </body>
 </html>

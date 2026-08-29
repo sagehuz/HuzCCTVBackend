@@ -142,6 +142,9 @@ func (s *Store) ValidateSession(token string) (*User, error) {
 		}
 		return nil, err
 	}
+	if err := s.UpdateSessionLastUsed(tokenHash); err != nil {
+		return nil, err
+	}
 	return u, nil
 }
 
