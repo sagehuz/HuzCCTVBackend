@@ -1,0 +1,32 @@
+# Go build artifacts
+/bin/
+/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# OS/editor noise
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Coverage / temp
+coverage.txt
+coverage.out
+.tmp/
+tmp/
