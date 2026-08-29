@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Devices</title>
+  </head>
+  <body>
+    <h2>Danh sách thiết bị</h2>
+    <div id="devices"></div>
+    <script>
+      fetch('/api/network-devices').then(async (r) => {
+        const data = await r.json();
+        document.getElementById('devices').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+      });
+    </script>
+  </body>
+</html>

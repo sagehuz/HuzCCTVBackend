@@ -1,0 +1,11 @@
+# Minimal embedded OUI database for offline lookup
+000C29 Cisco Systems
+001E2A Apple
+000A27 Samsung Electronics
+000D3A HUAWEI TECHNOLOGIES
+00123F Intel Corporate
+005056 VMware Inc.
+000B7D TP-LINK TECHNOLOGIES CO.,LTD.
+001A2F Xiaomi Communications Co Ltd
+0022B0 Realtek Semiconductor Corp.
+B8A3EA Raspberry Pi Foundation
