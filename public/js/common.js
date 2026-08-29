@@ -1,8 +1,9 @@
 /* ============================================================
    Huz CCTV — Shared front-end helpers
-   - Header xuất hiện trên mọi trang (có nút Đăng xuất)
-   - Kiểm tra / bảo vệ đăng nhập
-   - Wrapper fetch API + toast + tiện ích
+   - Header shown on every page (includes the language switcher
+     and the Sign out button)
+   - Auth check / guard
+   - fetch API wrapper + toast + utilities
    ============================================================ */
 (function () {
   'use strict';
@@ -11,9 +12,9 @@
   var STORAGE_KEY = 'huz_authed';
 
   var NAV_ITEMS = [
-    { href: '/index.html', label: 'Tổng quan', icon: 'grid' },
-    { href: '/devices.html', label: 'Thiết bị mạng', icon: 'network' },
-    { href: '/camera.html', label: 'Camera', icon: 'video' },
+    { href: '/index.html', tKey: 'nav.dashboard', icon: 'grid' },
+    { href: '/devices.html', tKey: 'nav.network', icon: 'network' },
+    { href: '/camera.html', tKey: 'nav.camera', icon: 'video' },
   ];
 
   var ICONS = {
@@ -37,7 +38,11 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>',
   };
 
-  /* ---------- Tiện ích ---------- */
+  /* ---------- Utilities ---------- */
+  function t(key, params) {
+    return window.I18N ? window.I18N.t(key, params) : key;
+  }
+
   function esc(value) {
     return String(value === null || value === undefined ? '' : value).replace(
       /[&<>"']/g,
@@ -51,7 +56,7 @@
     return ICONS[name] || '';
   }
 
-  /* ---------- Wrapper fetch ---------- */
+  /* ---------- fetch wrapper ---------- */
   async function api(path, options) {
     var opts = Object.assign({ headers: {} }, options || {});
     if (opts.body && typeof opts.body !== 'string') {
@@ -63,11 +68,18 @@
     try {
       data = await resp.json();
     } catch (_e) {
-      /* body không phải JSON */
+      /* body is not JSON */
     }
     if (!resp.ok) {
-      var err = new Error((data && data.message) || 'Yêu cầu thất bại');
+      var code = data && data.code;
+      var localized = code ? t('error.' + code) : null;
+      var msg =
+        localized && localized !== 'error.' + code
+          ? localized
+          : (data && data.message) || t('error.request_failed');
+      var err = new Error(msg);
       err.status = resp.status;
+      err.code = code;
       err.data = data;
       if (resp.status === 401 && location.pathname !== LOGIN_PATH) {
         redirectToLogin();
@@ -113,6 +125,22 @@
     return '';
   }
 
+  function languageSelect() {
+    var current = window.I18N ? window.I18N.lang() : 'en';
+    return (
+      '<select class="lang-select" id="langSelect" aria-label="' +
+      t('header.language') +
+      '">' +
+      '<option value="en"' +
+      (current === 'en' ? ' selected' : '') +
+      '>English</option>' +
+      '<option value="vi"' +
+      (current === 'vi' ? ' selected' : '') +
+      '>Tiếng Việt</option>' +
+      '</select>'
+    );
+  }
+
   function renderHeader(user) {
     var mount = document.getElementById('app-header');
     if (!mount) return;
@@ -127,7 +155,7 @@
         '">' +
         icon(item.icon) +
         '<span>' +
-        item.label +
+        t(item.tKey) +
         '</span></a>'
       );
     }).join('');
@@ -144,9 +172,14 @@
         '</span></div>' +
         '<button class="btn btn-danger btn-sm" id="logoutBtn" type="button">' +
         icon('logout') +
-        '<span>Đăng xuất</span></button>';
+        '<span>' +
+        t('header.logout') +
+        '</span></button>';
     } else {
-      actionsHtml = '<a class="btn btn-primary btn-sm" href="/login.html">Đăng nhập</a>';
+      actionsHtml =
+        '<a class="btn btn-primary btn-sm" href="/login.html">' +
+        t('header.login') +
+        '</a>';
     }
 
     mount.innerHTML =
@@ -155,24 +188,33 @@
       '<span class="brand-mark"></span>' +
       '<span class="brand-text">' +
       '<span class="brand-name">Huz CCTV</span>' +
-      '<span class="brand-sub">Giám sát thông minh</span>' +
-      '</span></a>' +
+      '<span class="brand-sub">' +
+      t('header.brand.sub') +
+      '</span></span></a>' +
       '<nav class="header-nav">' +
       navHtml +
       '</nav>' +
       '<div class="header-actions">' +
+      languageSelect() +
       actionsHtml +
       '</div></div>';
+
+    var langSelect = document.getElementById('langSelect');
+    if (langSelect) {
+      langSelect.addEventListener('change', function () {
+        if (window.I18N) window.I18N.setLang(langSelect.value);
+      });
+    }
 
     var logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async function () {
         logoutBtn.disabled = true;
-        logoutBtn.innerHTML = '<span>Đang xử lý…</span>';
+        logoutBtn.innerHTML = '<span>' + t('header.loggingOut') + '</span>';
         try {
           await api('/api/auth/logout', { method: 'POST' });
         } catch (_e) {
-          /* vẫn chuyển hướng về login dù có lỗi */
+          /* redirect to login even on error */
         }
         localStorage.removeItem(STORAGE_KEY);
         location.href = LOGIN_PATH;
@@ -205,7 +247,25 @@
     }, 3400);
   }
 
-  /* ---------- Khởi tạo trang ---------- */
+  /* ---------- Uptime formatting ---------- */
+  function formatUptime(seconds) {
+    if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '–';
+    seconds = Math.floor(seconds);
+    var d = Math.floor(seconds / 86400);
+    var h = Math.floor((seconds % 86400) / 3600);
+    var m = Math.floor((seconds % 3600) / 60);
+    var s = seconds % 60;
+    var parts = [];
+    if (d) parts.push(t('dash.uptime.day', { n: d }));
+    if (h) parts.push(t('dash.uptime.hour', { n: h }));
+    if (m) parts.push(t('dash.uptime.min', { n: m }));
+    if (!parts.length && s) parts.push(t('dash.uptime.sec', { n: s }));
+    return parts.length ? parts.join(' ') : t('dash.uptime.sec', { n: 0 });
+  }
+
+  /* ---------- Page init ---------- */
+  var lastUser = null;
+
   async function init(options) {
     var opts = options || {};
     var requireAuth = opts.requireAuth !== false;
@@ -221,12 +281,20 @@
       }
     }
 
+    lastUser = user;
     renderHeader(user);
     document.body.classList.toggle('authed', !!user);
     if (typeof opts.onReady === 'function') {
       opts.onReady(user);
     }
     return user;
+  }
+
+  /* Re-render the header when the language changes. */
+  if (document.addEventListener) {
+    document.addEventListener('huz:langchange', function () {
+      renderHeader(lastUser);
+    });
   }
 
   window.HuzApp = {
@@ -236,6 +304,19 @@
     toast: toast,
     esc: esc,
     icon: icon,
+    t: function (key, params) {
+      return t(key, params);
+    },
+    lang: function () {
+      return window.I18N ? window.I18N.lang() : 'en';
+    },
+    locale: function () {
+      return window.I18N ? window.I18N.locale() : 'en-US';
+    },
+    setLang: function (lang) {
+      if (window.I18N) window.I18N.setLang(lang);
+    },
+    formatUptime: formatUptime,
     redirectToLogin: redirectToLogin,
     loginRedirect: loginRedirect,
   };

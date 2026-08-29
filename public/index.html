@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
-    <title>Tổng quan · Huz CCTV</title>
+    <title data-i18n="dash.title">Dashboard · Huz CCTV</title>
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
@@ -13,12 +13,12 @@
     <main class="page">
       <div class="page-head">
         <div>
-          <h1 class="page-title">Tổng quan</h1>
-          <p class="page-sub" id="greeting">Chào mừng bạn đến với hệ thống giám sát Huz CCTV.</p>
+          <h1 class="page-title" data-i18n="dash.pageTitle">Dashboard</h1>
+          <p class="page-sub" id="greeting" data-i18n="dash.sub">Welcome to the Huz CCTV surveillance system.</p>
         </div>
         <div class="row-actions">
-          <a class="btn btn-ghost" href="/devices.html">Thiết bị mạng</a>
-          <a class="btn btn-primary" href="/camera.html">Xem camera</a>
+          <a class="btn btn-ghost" href="/devices.html" data-i18n="dash.networkDevices">Network Devices</a>
+          <a class="btn btn-primary" href="/camera.html" data-i18n="dash.viewCamera">View cameras</a>
         </div>
       </div>
 
@@ -27,40 +27,40 @@
           <div class="icon-badge green" id="serverBadge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><path d="M6 6.5h.01"/><path d="M6 17.5h.01"/></svg>
           </div>
-          <div class="stat-label">Máy chủ</div>
-          <div class="stat-value small" id="serverStatus">Đang kiểm tra…</div>
-          <div class="stat-foot" id="serverFoot">Kiểm tra kết nối tới backend</div>
+          <div class="stat-label" data-i18n="dash.stat.server">Server</div>
+          <div class="stat-value small" id="serverStatus" data-i18n="dash.stat.server.checking">Checking…</div>
+          <div class="stat-foot" id="serverFoot" data-i18n="dash.stat.server.foot">Checking connection to the backend</div>
           <div class="server-meta" id="serverMeta">
             <div class="server-item">
-              <span class="server-k">Địa chỉ IP</span>
+              <span class="server-k" data-i18n="dash.server.ip">IP Address</span>
               <span class="server-v mono" id="serverIp">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Cổng</span>
+              <span class="server-k" data-i18n="dash.server.port">Port</span>
               <span class="server-v mono" id="serverPort">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Tên máy chủ</span>
+              <span class="server-k" data-i18n="dash.server.hostname">Hostname</span>
               <span class="server-v" id="serverHostname">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Thời gian hoạt động</span>
+              <span class="server-k" data-i18n="dash.server.uptime">Uptime</span>
               <span class="server-v" id="serverUptime">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Hệ điều hành</span>
+              <span class="server-k" data-i18n="dash.server.os">Operating system</span>
               <span class="server-v" id="serverOs">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Phiên bản ứng dụng</span>
+              <span class="server-k" data-i18n="dash.server.version">App version</span>
               <span class="server-v mono" id="serverVersion">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Go · CPU</span>
+              <span class="server-k" data-i18n="dash.server.go">Go · CPU</span>
               <span class="server-v mono" id="serverGo">–</span>
             </div>
             <div class="server-item">
-              <span class="server-k">Khởi động lúc</span>
+              <span class="server-k" data-i18n="dash.server.started">Started at</span>
               <span class="server-v" id="serverStarted">–</span>
             </div>
           </div>
@@ -70,93 +70,101 @@
           <div class="icon-badge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>
           </div>
-          <div class="stat-label">Thiết bị mạng</div>
+          <div class="stat-label" data-i18n="dash.stat.devices">Network devices</div>
           <div class="stat-value small" id="deviceCount">–</div>
-          <div class="stat-foot" id="deviceFoot">Số thiết bị tìm thấy trên mạng LAN</div>
+          <div class="stat-foot" id="deviceFoot" data-i18n="dash.stat.devices.foot">Devices found on the local network</div>
         </div>
 
         <div class="stat-card">
           <div class="icon-badge green">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
           </div>
-          <div class="stat-label">Người dùng</div>
+          <div class="stat-label" data-i18n="dash.stat.user">User</div>
           <div class="stat-value small" id="userName">–</div>
-          <div class="stat-foot">Phiên đăng nhập đang hoạt động</div>
+          <div class="stat-foot" data-i18n="dash.stat.user.foot">Active signed-in session</div>
         </div>
       </div>
 
       <div class="grid grid-3 mt-3">
         <div class="card card-pad" style="grid-column: span 2">
-          <h2 class="card-title mb-1">Bắt đầu nhanh</h2>
-          <p class="text-muted" style="margin: 0 0 18px; font-size: 14px; line-height: 1.6">
-            Huz CCTV kết nối trực tiếp với camera trên mạng LAN qua WebRTC.
-            Luồng video được truyền trực tiếp giữa thiết bị và trình duyệt, không qua trung gian.
+          <h2 class="card-title mb-1" data-i18n="dash.quickstart">Quick start</h2>
+          <p class="text-muted" style="margin: 0 0 18px; font-size: 14px; line-height: 1.6" data-i18n="dash.quickstart.desc">
+            Huz CCTV connects directly to cameras on your local network over WebRTC.
+            Video streams travel directly between the device and your browser — no intermediaries.
           </p>
           <div class="row-actions">
             <a class="btn btn-primary" href="/camera.html">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>
-              Xem camera
+              <span data-i18n="dash.viewCameras">View cameras</span>
             </a>
             <a class="btn btn-ghost" href="/devices.html">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="6" height="6" rx="1.5"/><rect x="16" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="2" width="6" height="6" rx="1.5"/><rect x="9" y="16" width="6" height="6" rx="1.5"/><path d="M5 15v2a2 2 0 0 0 2 2h4"/><path d="M19 15v2a2 2 0 0 1-2 2h-4"/></svg>
-              Quét thiết bị mạng
+              <span data-i18n="dash.scanDevices">Scan network devices</span>
             </a>
           </div>
         </div>
 
         <div class="card card-pad">
-          <h2 class="card-title mb-1">Thông tin hệ thống</h2>
+          <h2 class="card-title mb-1" data-i18n="dash.sysinfo">System information</h2>
           <dl style="margin: 0; font-size: 14px; line-height: 1.9">
-            <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em">Backend</dt>
+            <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em" data-i18n="dash.sysinfo.backend">Backend</dt>
             <dd class="text-2" style="margin: 0">Go · HTTP · WebSocket</dd>
-            <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px">Bảo mật</dt>
+            <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px" data-i18n="dash.sysinfo.security">Security</dt>
             <dd class="text-2" style="margin: 0">Session cookie · scrypt · rate limit</dd>
-            <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px">Phiên bản giao diện</dt>
+            <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px" data-i18n="dash.sysinfo.ui">UI version</dt>
             <dd class="text-2" style="margin: 0">2026.1</dd>
           </dl>
         </div>
       </div>
     </main>
 
+    <script src="/js/i18n.js"></script>
     <script src="/js/common.js"></script>
     <script>
       (function () {
         'use strict';
 
+        var serverOk = null;
+        var lastUsername = null;
+
         function hourGreeting() {
           var h = new Date().getHours();
-          if (h < 12) return 'Chào buổi sáng';
-          if (h < 18) return 'Chào buổi chiều';
-          return 'Chào buổi tối';
+          if (h < 12) return HuzApp.t('dash.greeting.morning');
+          if (h < 18) return HuzApp.t('dash.greeting.afternoon');
+          return HuzApp.t('dash.greeting.evening');
+        }
+
+        function applyDynamicText() {
+          var username = lastUsername || HuzApp.t('dash.greeting.admin');
+          document.getElementById('greeting').textContent = HuzApp.t('dash.greeting.format', {
+            greeting: hourGreeting(),
+            username: username,
+          });
+          document.getElementById('userName').textContent = username;
+        }
+
+        function applyServerStatus() {
+          if (serverOk === true) {
+            document.getElementById('serverStatus').textContent = HuzApp.t('dash.stat.server.ok');
+            document.getElementById('serverFoot').textContent = HuzApp.t('dash.stat.server.okFoot');
+            document.querySelector('#statsGrid .icon-badge').className = 'icon-badge green';
+          } else if (serverOk === false) {
+            document.getElementById('serverStatus').textContent = HuzApp.t('dash.stat.server.err');
+            document.getElementById('serverFoot').textContent = HuzApp.t('dash.stat.server.errFoot');
+            var badge = document.querySelector('#statsGrid .icon-badge');
+            badge.className = 'icon-badge red';
+            badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
+          }
         }
 
         function setServerOk() {
-          document.getElementById('serverStatus').textContent = 'Hoạt động';
-          document.getElementById('serverFoot').textContent = 'Backend phản hồi bình thường';
-          document.querySelector('#statsGrid .icon-badge').className = 'icon-badge green';
+          serverOk = true;
+          applyServerStatus();
         }
 
         function setServerErr() {
-          document.getElementById('serverStatus').textContent = 'Mất kết nối';
-          document.getElementById('serverFoot').textContent = 'Không thể liên hệ với backend';
-          var badge = document.querySelector('#statsGrid .icon-badge');
-          badge.className = 'icon-badge red';
-          badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
-        }
-
-        function formatUptime(seconds) {
-          if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '–';
-          seconds = Math.floor(seconds);
-          var d = Math.floor(seconds / 86400);
-          var h = Math.floor((seconds % 86400) / 3600);
-          var m = Math.floor((seconds % 3600) / 60);
-          var s = seconds % 60;
-          var parts = [];
-          if (d) parts.push(d + ' ngày');
-          if (h) parts.push(h + ' giờ');
-          if (m) parts.push(m + ' phút');
-          if (!parts.length && s) parts.push(s + ' giây');
-          return parts.length ? parts.join(' ') : '0 giây';
+          serverOk = false;
+          applyServerStatus();
         }
 
         function loadServerInfo() {
@@ -170,13 +178,10 @@
               if (!info) return;
               var ips = Array.isArray(info.ips) && info.ips.length ? info.ips : [];
               if (!ips.length && info.ip) ips = [info.ip];
-              set(
-                'serverIp',
-                ips.length ? ips.join(' · ') : location.hostname || '–'
-              );
+              set('serverIp', ips.length ? ips.join(' · ') : location.hostname || '–');
               set('serverPort', info.port || location.port || '3300');
               set('serverHostname', info.hostname || '–');
-              set('serverUptime', formatUptime(info.uptime));
+              set('serverUptime', HuzApp.formatUptime(info.uptime));
               var osLabel = info.os || '';
               if (info.arch) osLabel = osLabel ? osLabel + ' · ' + info.arch : info.arch;
               set('serverOs', osLabel || '–');
@@ -189,7 +194,7 @@
               );
               set(
                 'serverStarted',
-                info.started_at ? new Date(info.started_at).toLocaleString('vi-VN') : '–'
+                info.started_at ? new Date(info.started_at).toLocaleString(HuzApp.locale()) : '–'
               );
             })
             .catch(function () {
@@ -198,35 +203,40 @@
             });
         }
 
-        HuzApp.init({ requireAuth: true }).then(function (user) {
-          if (!user) return;
-
-          var username = (user.user && user.user.username) || 'quản trị viên';
-          document.getElementById('greeting').textContent =
-            hourGreeting() + ', ' + username + '! Hệ thống giám sát Huz CCTV đang sẵn sàng.';
-          document.getElementById('userName').textContent = username;
-
-          HuzApp.api('/api/health')
-            .then(function () {
-              setServerOk();
-            })
-            .catch(function () {
-              setServerErr();
-            });
-
-          loadServerInfo();
-
+        function loadDeviceCount() {
           HuzApp.api('/api/network-devices')
             .then(function (data) {
               var count = data && typeof data.count === 'number' ? data.count : 0;
               document.getElementById('deviceCount').textContent = String(count);
-              document.getElementById('deviceFoot').textContent =
-                'Cập nhật ' + new Date().toLocaleTimeString('vi-VN');
+              document.getElementById('deviceFoot').textContent = HuzApp.t('dash.stat.devices.updated', {
+                time: new Date().toLocaleTimeString(HuzApp.locale()),
+              });
             })
             .catch(function () {
               document.getElementById('deviceCount').textContent = 'N/A';
-              document.getElementById('deviceFoot').textContent = 'Chưa quét được mạng LAN';
+              document.getElementById('deviceFoot').textContent = HuzApp.t('dash.stat.devices.error');
             });
+        }
+
+        HuzApp.init({ requireAuth: true }).then(function (user) {
+          if (!user) return;
+
+          lastUsername = (user.user && user.user.username) || HuzApp.t('dash.greeting.admin');
+          applyDynamicText();
+
+          HuzApp.api('/api/health')
+            .then(setServerOk)
+            .catch(setServerErr);
+
+          loadServerInfo();
+          loadDeviceCount();
+        });
+
+        document.addEventListener('huz:langchange', function () {
+          applyDynamicText();
+          applyServerStatus();
+          loadServerInfo();
+          loadDeviceCount();
         });
       })();
     </script>

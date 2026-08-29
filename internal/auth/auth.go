@@ -134,10 +134,11 @@ func (a *AuthService) IssueSession(userID int64) (string, error) {
 	return token, nil
 }
 
-// SetSessionCookie ghi cookie phiên đăng nhập.
-// - remember == true: cookie tồn tại lâu dài (10 năm nếu bật SESSION_PERSISTENT,
-//   ngược lại 7 ngày), người dùng không phải đăng nhập lại mỗi lần mở trình duyệt.
-// - remember == false: cookie chỉ tồn tại trong phiên trình duyệt hiện tại.
+// SetSessionCookie writes the session cookie.
+// - remember == true: cookie lasts for a long time (10 years if SESSION_PERSISTENT
+//   is on, otherwise 7 days), so users do not have to sign in again each time
+//   they open the browser.
+// - remember == false: cookie only lasts for the current browser session.
 func (a *AuthService) SetSessionCookie(w http.ResponseWriter, token string, remember bool) {
 	maxAge := 0
 	if remember {
@@ -305,7 +306,7 @@ func (a *AuthService) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, _, err := a.CurrentUserFromRequest(r)
 		if err != nil || user == nil {
-			http.Error(w, "Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn", http.StatusUnauthorized)
+			http.Error(w, "Not signed in or session expired", http.StatusUnauthorized)
 			return
 		}
 		r = r.WithContext(contextWithUser(r.Context(), user))
@@ -331,21 +332,21 @@ func (a *AuthService) LoginJSON(username, password, clientIP string) (int, map[s
 	trimUser := normalizeUsername(username)
 	trimPass := strings.TrimSpace(password)
 	if trimUser == "" || trimPass == "" {
-		return http.StatusBadRequest, map[string]any{"message": "Vui lòng nhập tên đăng nhập và mật khẩu"}
+		return http.StatusBadRequest, map[string]any{"code": "invalid_input", "message": "Please enter username and password"}
 	}
 	user, err := a.Login(trimUser, trimPass, clientIP)
 	if err != nil {
 		if errors.Is(err, errRateLimit) {
-			return http.StatusTooManyRequests, map[string]any{"message": "Quá nhiều lần đăng nhập sai, vui lòng thử lại sau 15 phút"}
+			return http.StatusTooManyRequests, map[string]any{"code": "rate_limited", "message": "Too many failed login attempts, please try again in 15 minutes"}
 		}
-		return http.StatusUnauthorized, map[string]any{"message": "Tên đăng nhập hoặc mật khẩu không đúng"}
+		return http.StatusUnauthorized, map[string]any{"code": "invalid_credentials", "message": "Invalid username or password"}
 	}
 
 	token, err := a.IssueSession(user.ID)
 	if err != nil {
-		return http.StatusInternalServerError, map[string]any{"message": "Không thể tạo phiên đăng nhập"}
+		return http.StatusInternalServerError, map[string]any{"code": "session_error", "message": "Could not create a login session"}
 	}
-	return http.StatusOK, map[string]any{"message": "Đăng nhập thành công", "user": map[string]any{"id": user.ID, "username": user.Username}, "token": token}
+	return http.StatusOK, map[string]any{"code": "ok", "message": "Signed in successfully", "user": map[string]any{"id": user.ID, "username": user.Username}, "token": token}
 }
 
 func (a *AuthService) UserDTOFromUser(user *store.User) UserDTO {

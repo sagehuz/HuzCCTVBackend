@@ -51,7 +51,7 @@ func (h *Handler) Mux() http.Handler {
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Server đang chạy thành công"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"code": "ok", "message": "Server is running successfully"})
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +63,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Vui lòng nhập tên đăng nhập và mật khẩu"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"code": "invalid_input", "message": "Please enter username and password"})
 		return
 	}
 	username, _ := body["username"].(string)
@@ -90,7 +90,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	h.auth.Logout(r, w)
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Đã đăng xuất"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"code": "ok", "message": "Signed out"})
 }
 
 func (h *Handler) requireAuth(next http.HandlerFunc) http.HandlerFunc {
@@ -99,7 +99,7 @@ func (h *Handler) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 		if err != nil || user == nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"message": "Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"code": "unauthorized", "message": "Not signed in or session expired"})
 			return
 		}
 		r = r.WithContext(contextWithUser(r.Context(), user))
@@ -122,26 +122,26 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Thiếu thông tin mật khẩu"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"code": "missing_password", "message": "Missing password information"})
 		return
 	}
 	if body["currentPassword"] == "" || body["newPassword"] == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Thiếu thông tin mật khẩu"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"code": "missing_password", "message": "Missing password information"})
 		return
 	}
 	if len(body["newPassword"]) < 8 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Mật khẩu mới phải có ít nhất 8 ký tự"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"code": "password_too_short", "message": "New password must be at least 8 characters"})
 		return
 	}
 	user := userFromContext(r.Context())
 	if err := h.auth.ChangePassword(user.ID, body["currentPassword"], body["newPassword"]); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(map[string]string{"message": "Mật khẩu hiện tại không đúng"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"code": "wrong_current_password", "message": "Current password is incorrect"})
 		return
 	}
 	if token, err := r.Cookie("huz_session"); err == nil && token.Value != "" {
@@ -150,7 +150,7 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Đã đổi mật khẩu thành công"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"code": "ok", "message": "Password changed successfully"})
 }
 
 func (h *Handler) networkDevices(w http.ResponseWriter, r *http.Request) {
@@ -163,10 +163,10 @@ func (h *Handler) networkDevices(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		if strings.Contains(err.Error(), "no network interface") {
-			_ = json.NewEncoder(w).Encode(map[string]string{"message": "Không tìm thấy card mạng nào đang hoạt động"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"code": "no_network_iface", "message": "No active network interface found"})
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"message": "Không thể lấy danh sách thiết bị mạng", "error": err.Error()})
+		_ = json.NewEncoder(w).Encode(map[string]any{"code": "scan_failed", "message": "Could not get the network device list", "error": err.Error()})
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -240,7 +240,7 @@ func (h *Handler) serveStatic(w http.ResponseWriter, r *http.Request) {
 	if path == "" {
 		path = "index.html"
 	}
-	// Các trang yêu cầu đăng nhập.
+	// Pages that require sign-in.
 	if path == "index.html" || path == "camera.html" || path == "devices.html" {
 		if _, _, err := h.auth.CurrentUserFromRequest(r); err != nil {
 			redirectPath := url.QueryEscape(r.URL.Path)
@@ -248,7 +248,7 @@ func (h *Handler) serveStatic(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// Người đã đăng nhập ghé trang login thì đưa về trang chủ.
+	// Signed-in users visiting the login page are sent to the dashboard.
 	if path == "login.html" {
 		if _, _, err := h.auth.CurrentUserFromRequest(r); err == nil {
 			http.Redirect(w, r, "/index.html", http.StatusFound)

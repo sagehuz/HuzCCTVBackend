@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
-    <title>Thiết bị mạng · Huz CCTV</title>
+    <title data-i18n="devices.title">Network Devices · Huz CCTV</title>
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
@@ -13,59 +13,59 @@
     <main class="page">
       <div class="page-head">
         <div>
-          <h1 class="page-title">Thiết bị mạng</h1>
-          <p class="page-sub">Danh sách thiết bị được phát hiện trên mạng LAN hiện tại.</p>
+          <h1 class="page-title" data-i18n="devices.pageTitle">Network Devices</h1>
+          <p class="page-sub" data-i18n="devices.sub">Devices discovered on the current local network.</p>
         </div>
         <div class="row-actions">
-          <span class="badge badge-online" id="countBadge"><span class="status-dot"></span><span id="countText">0 thiết bị</span></span>
+          <span class="badge badge-online" id="countBadge"><span class="status-dot"></span><span id="countText">0 devices</span></span>
           <button class="btn btn-ghost" id="refreshBtn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-            <span>Quét lại</span>
+            <span data-i18n="devices.scan">Scan again</span>
           </button>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Danh sách thiết bị <span class="hint" id="lastUpdated"></span></div>
+          <div class="card-title"><span data-i18n="devices.list">Device list</span> <span class="hint" id="lastUpdated"></span></div>
         </div>
 
         <div class="state-box" id="loadingState">
           <div class="spinner"></div>
           <div>
-            <div class="state-title">Đang quét mạng LAN…</div>
-            <div>Quá trình này có thể mất vài giây</div>
+            <div class="state-title" data-i18n="devices.loading">Scanning the local network…</div>
+            <div data-i18n="devices.loading.sub">This may take a few seconds</div>
           </div>
         </div>
 
         <div class="state-box hidden" id="emptyState">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <div>
-            <div class="state-title">Không tìm thấy thiết bị</div>
-            <div>Kiểm tra card mạng và thử quét lại.</div>
+            <div class="state-title" data-i18n="devices.empty">No devices found</div>
+            <div data-i18n="devices.empty.sub">Check your network interface and try scanning again.</div>
           </div>
-          <button class="btn btn-ghost btn-sm" id="retryEmptyBtn" type="button">Quét lại</button>
+          <button class="btn btn-ghost btn-sm" id="retryEmptyBtn" type="button" data-i18n="devices.scan">Scan again</button>
         </div>
 
         <div class="state-box hidden" id="errorState">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
           <div>
-            <div class="state-title">Không thể quét thiết bị</div>
-            <div id="errorMessage">Đã có lỗi xảy ra.</div>
+            <div class="state-title" data-i18n="devices.error">Unable to scan devices</div>
+            <div id="errorMessage" data-i18n="devices.error.sub">An error occurred.</div>
           </div>
-          <button class="btn btn-ghost btn-sm" id="retryErrorBtn" type="button">Thử lại</button>
+          <button class="btn btn-ghost btn-sm" id="retryErrorBtn" type="button" data-i18n="devices.tryAgain">Try again</button>
         </div>
 
         <div class="table-wrap hidden" id="tableWrap">
           <table class="table">
             <thead>
               <tr>
-                <th>Địa chỉ IP</th>
-                <th>Địa chỉ MAC</th>
-                <th>Nhà sản xuất</th>
-                <th>Hostname</th>
-                <th>Giao diện</th>
-                <th>Trạng thái</th>
+                <th data-i18n="devices.th.ip">IP Address</th>
+                <th data-i18n="devices.th.mac">MAC Address</th>
+                <th data-i18n="devices.th.vendor">Vendor</th>
+                <th data-i18n="devices.th.hostname">Hostname</th>
+                <th data-i18n="devices.th.iface">Interface</th>
+                <th data-i18n="devices.th.state">State</th>
               </tr>
             </thead>
             <tbody id="deviceBody"></tbody>
@@ -75,6 +75,7 @@
     </main>
 
 
+    <script src="/js/i18n.js"></script>
     <script src="/js/common.js"></script>
     <script>
       (function () {
@@ -89,6 +90,9 @@
         var lastUpdated = document.getElementById('lastUpdated');
         var errorMessage = document.getElementById('errorMessage');
 
+        var devices = [];
+        var lastError = null;
+
         function setState(which) {
           loadingState.classList.add('hidden');
           emptyState.classList.add('hidden');
@@ -98,7 +102,9 @@
         }
 
         function vendorOf(device) {
-          return device.vendor ? HuzApp.esc(device.vendor) : '<span class="text-muted">Không rõ</span>';
+          return device.vendor
+            ? HuzApp.esc(device.vendor)
+            : '<span class="text-muted">' + HuzApp.esc(HuzApp.t('devices.unknown')) + '</span>';
         }
 
         function hostnameOf(device) {
@@ -108,7 +114,11 @@
         function stateBadge(device) {
           var state = (device.state || 'reachable').toLowerCase();
           if (state === 'reachable' || state === 'online' || state === 'up') {
-            return '<span class="badge badge-online"><span class="status-dot"></span>Trực tuyến</span>';
+            return (
+              '<span class="badge badge-online"><span class="status-dot"></span>' +
+              HuzApp.esc(HuzApp.t('devices.online')) +
+              '</span>'
+            );
           }
           if (state === 'stale' || state === 'incomplete') {
             return '<span class="badge badge-warn">' + HuzApp.esc(state) + '</span>';
@@ -117,8 +127,8 @@
         }
 
         function renderDevices(data) {
-          var devices = (data && Array.isArray(data.devices)) ? data.devices : [];
-          countText.textContent = devices.length + ' thiết bị';
+          devices = data && Array.isArray(data.devices) ? data.devices : [];
+          countText.textContent = HuzApp.t('devices.count', { n: devices.length });
 
           if (!devices.length) {
             setState(emptyState);
@@ -143,25 +153,47 @@
           setState(tableWrap);
         }
 
+        function renderError() {
+          if (lastError) errorMessage.textContent = lastError;
+        }
+
         function load() {
           setState(loadingState);
           lastUpdated.textContent = '';
+          lastError = null;
 
           HuzApp.api('/api/network-devices')
             .then(function (data) {
               renderDevices(data);
-              lastUpdated.textContent = '· Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN');
+              lastUpdated.textContent = HuzApp.t('devices.updatedAt', {
+                time: new Date().toLocaleTimeString(HuzApp.locale()),
+              });
             })
             .catch(function (err) {
               setState(errorState);
-              errorMessage.textContent =
-                (err && err.message) || 'Không thể kết nối tới backend.';
+              var localized = err && err.code ? HuzApp.t('error.' + err.code) : null;
+              lastError =
+                localized && localized !== 'error.' + (err.code || '')
+                  ? localized
+                  : (err && err.message) || HuzApp.t('devices.error.sub');
+              renderError();
             });
         }
 
         document.getElementById('refreshBtn').addEventListener('click', load);
         document.getElementById('retryEmptyBtn').addEventListener('click', load);
         document.getElementById('retryErrorBtn').addEventListener('click', load);
+
+        document.addEventListener('huz:langchange', function () {
+          countText.textContent = HuzApp.t('devices.count', { n: devices.length });
+          if (devices.length) renderDevices({ devices: devices });
+          if (lastUpdated.textContent) {
+            lastUpdated.textContent = HuzApp.t('devices.updatedAt', {
+              time: new Date().toLocaleTimeString(HuzApp.locale()),
+            });
+          }
+          renderError();
+        });
 
         HuzApp.init({ requireAuth: true }).then(function (user) {
           if (user) load();

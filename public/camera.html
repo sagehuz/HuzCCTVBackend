@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
-    <title>Camera · Huz CCTV</title>
+    <title data-i18n="camera.title">Camera · Huz CCTV</title>
     <link rel="stylesheet" href="/css/styles.css" />
     <style>
       .toolbar {
@@ -214,33 +214,33 @@
 
     <main class="page">
       <div class="toolbar">
-        <h2 id="cameraTitle">Camera</h2>
+        <h2 id="cameraTitle" data-i18n="nav.camera">Camera</h2>
         <div class="toolbar-actions">
           <div class="pill" id="statusPill">
             <span class="status-dot"></span>
-            <span id="statusText">Đang chờ</span>
+            <span id="statusText" data-i18n="camera.awaiting">Awaiting</span>
           </div>
           <button class="btn btn-ghost" id="refreshBtn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-            <span>Làm mới</span>
+            <span data-i18n="camera.refresh">Refresh</span>
           </button>
           <button class="btn btn-primary" id="connectAllBtn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-            <span>Kết nối tất cả</span>
+            <span data-i18n="camera.connectAll">Connect all</span>
           </button>
         </div>
       </div>
       <div class="stats">
         <div class="stat-card">
-          <div class="stat-label">Tổng thiết bị</div>
+          <div class="stat-label" data-i18n="camera.stat.total">Total devices</div>
           <div id="totalDevices" class="stat-value small">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Đang xem</div>
+          <div class="stat-label" data-i18n="camera.stat.streaming">Streaming</div>
           <div id="streamingCount" class="stat-value small">0/0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Trạng thái kết nối</div>
+          <div class="stat-label" data-i18n="camera.stat.connection">Connection state</div>
           <div id="connectionStatus" class="stat-value small">Offline</div>
         </div>
       </div>
@@ -248,11 +248,12 @@
       <div class="camera-grid" id="videoGrid">
         <div class="empty-state" id="emptyState">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>
-          <div>Chưa có thiết bị camera nào kết nối.<br />Khi thiết bị kết nối, luồng video sẽ tự động hiển thị tại đây.</div>
+          <div><span data-i18n="camera.empty.title">No camera devices connected yet.</span><br /><span data-i18n="camera.empty.sub">When devices connect, video streams will appear here automatically.</span></div>
         </div>
       </div>
     </main>
 
+    <script src="/js/i18n.js"></script>
     <script src="/js/common.js"></script>
     <script>
       (function () {
@@ -277,11 +278,28 @@
         var rtcConfiguration = {
           iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
         };
-        function updateStatus(text, connected) {
-          wsConnected = !!connected;
+        var lastStatusKey = 'camera.awaiting';
+        var lastConnected = false;
+
+        function setStatus(key, connected) {
+          lastStatusKey = key || 'camera.awaiting';
+          lastConnected = !!connected;
+          applyStatus();
+        }
+
+        function applyStatus() {
+          var text = HuzApp.t(lastStatusKey);
+          if (text === lastStatusKey) text = '';
           statusTextEl.textContent = text;
-          connectionStatusEl.textContent = connected ? 'Online' : 'Offline';
-          statusPillEl.classList.toggle('warn', !connected);
+          connectionStatusEl.textContent = lastConnected
+            ? HuzApp.t('camera.online')
+            : HuzApp.t('camera.offline');
+          statusPillEl.classList.toggle('warn', !lastConnected);
+        }
+
+        function wsErrorKey(code) {
+          var key = code ? 'ws.' + code : '';
+          return key && HuzApp.t(key) !== key ? key : 'camera.status.error';
         }
 
         function send(payload) {
@@ -319,22 +337,42 @@
           return cell ? cell.querySelector('.camera-cell-overlay') : null;
         }
 
-        function setBadge(id, text, kind) {
-          var badge = getBadge(id);
-          if (!badge) return;
-          badge.textContent = text;
-          badge.className = 'camera-badge ' + (kind || 'warn');
+        var badgeStates = {};
+        var overlayKeys = {};
+        var overlayVisible = {};
+
+        function setBadge(id, key, kind) {
+          badgeStates[id] = { key: key, kind: kind || 'warn' };
+          applyBadge(id);
         }
 
-        function showOverlay(id, text) {
+        function applyBadge(id) {
+          var badge = getBadge(id);
+          if (!badge) return;
+          var st = badgeStates[id];
+          var text = st ? HuzApp.t(st.key) : HuzApp.t('camera.badge.waiting');
+          badge.textContent = text;
+          badge.className = 'camera-badge ' + (st ? st.kind : 'warn');
+        }
+
+        function showOverlay(id, key) {
+          overlayKeys[id] = key || 'camera.overlay.connecting';
+          overlayVisible[id] = true;
+          applyOverlay(id);
+        }
+
+        function applyOverlay(id) {
           var overlay = getOverlay(id);
           if (!overlay) return;
           var label = overlay.querySelector('.overlay-text');
-          if (label) label.textContent = text;
-          overlay.classList.remove('hidden');
+          if (label) {
+            label.textContent = HuzApp.t(overlayKeys[id] || 'camera.overlay.connecting');
+          }
+          overlay.classList.toggle('hidden', !overlayVisible[id]);
         }
 
         function hideOverlay(id) {
+          overlayVisible[id] = false;
           var overlay = getOverlay(id);
           if (overlay) overlay.classList.add('hidden');
         }
@@ -360,16 +398,20 @@
           head.innerHTML =
             '<div style="min-width: 0">' +
             '<div class="camera-cell-name">' +
-            esc(device.name || 'Camera') +
+            esc(device.name || HuzApp.t('camera.deviceName')) +
             '</div>' +
             '<div class="camera-cell-id">' +
             esc(device.deviceId || device.id) +
             '</div></div>' +
             '<div class="camera-cell-actions">' +
-            '<span class="camera-badge warn">Đang chờ…</span>' +
+            '<span class="camera-badge warn">' +
+            HuzApp.t('camera.badge.waiting') +
+            '</span>' +
             '<button class="btn btn-ghost btn-sm" type="button" data-action="reconnect">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>' +
-            '<span>Kết nối lại</span></button>' +
+            '<span>' +
+            HuzApp.t('camera.reconnect') +
+            '</span></button>' +
             '</div>';
 
           var body = document.createElement('div');
@@ -378,8 +420,14 @@
             '<video playsinline autoplay muted></video>' +
             '<div class="camera-cell-overlay">' +
             '<div class="spinner"></div>' +
-            '<span class="overlay-text">Đang kết nối…</span>' +
+            '<span class="overlay-text">' +
+            HuzApp.t('camera.overlay.connecting') +
+            '</span>' +
             '</div>';
+
+          badgeStates[device.id] = { key: 'camera.badge.waiting', kind: 'warn' };
+          overlayKeys[device.id] = 'camera.overlay.connecting';
+          overlayVisible[device.id] = true;
 
           cell.appendChild(head);
           cell.appendChild(body);
@@ -396,6 +444,9 @@
         function removeCell(id) {
           closePeerConnection(id);
           delete streamingIds[id];
+          delete badgeStates[id];
+          delete overlayKeys[id];
+          delete overlayVisible[id];
           var cell = getCell(id);
           if (cell) cell.remove();
           updateStats();
@@ -404,8 +455,8 @@
           if (!device || !device.id || !socket) return;
           var video = getVideo(device.id);
           if (video) video.srcObject = null;
-          setBadge(device.id, 'Đang chờ phản hồi…', 'warn');
-          showOverlay(device.id, 'Đang kết nối…');
+          setBadge(device.id, 'camera.badge.awaitingReply', 'warn');
+          showOverlay(device.id, 'camera.overlay.connecting');
           markStreaming(device.id, false);
           send({ type: 'watch', targetId: device.id });
         }
@@ -485,7 +536,7 @@
               video.play().catch(function () {});
             }
             hideOverlay(message.from);
-            setBadge(message.from, 'Đang xem trực tiếp', 'ok');
+            setBadge(message.from, 'camera.badge.live', 'ok');
             markStreaming(message.from, true);
           };
 
@@ -504,12 +555,12 @@
             var state = pc.connectionState;
             if (state === 'connected') {
               if (!streamingIds[message.from]) {
-                setBadge(message.from, 'Đã kết nối', 'ok');
+                setBadge(message.from, 'camera.badge.connected', 'ok');
               }
             } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
               markStreaming(message.from, false);
-              setBadge(message.from, 'Mất kết nối', 'err');
-              showOverlay(message.from, 'Mất kết nối luồng video');
+              setBadge(message.from, 'camera.badge.disconnected', 'err');
+              showOverlay(message.from, 'camera.overlay.streamLost');
             }
           };
 
@@ -538,8 +589,8 @@
           );
 
           socket.addEventListener('open', function () {
-            updateStatus('Đã kết nối', true);
-            send({ type: 'register', role: 'viewer', name: 'Trình duyệt CCTV' });
+            setStatus('camera.status.connected', true);
+            send({ type: 'register', role: 'viewer', name: HuzApp.t('camera.viewerName') });
           });
 
           socket.addEventListener('message', function (event) {
@@ -558,12 +609,12 @@
             }
 
             if (msg.type === 'error') {
-              updateStatus(msg.message || 'Lỗi kết nối', wsConnected);
+              setStatus(wsErrorKey(msg.code), wsConnected);
               return;
             }
 
             if (msg.type === 'registered') {
-              updateStatus('Sẵn sàng', true);
+              setStatus('camera.status.ready', true);
               return;
             }
 
@@ -571,8 +622,8 @@
               acceptOffer(msg).catch(function (err) {
                 console.error('WebRTC offer failed', err);
                 if (msg.from) {
-                  setBadge(msg.from, 'Không thể kết nối', 'err');
-                  showOverlay(msg.from, 'Không thể kết nối luồng video');
+                  setBadge(msg.from, 'camera.badge.disconnected', 'err');
+                  showOverlay(msg.from, 'camera.overlay.connectFailed');
                 }
               });
               return;
@@ -589,18 +640,18 @@
             closeAllConnections();
             streamingIds = {};
             updateStats();
-            updateStatus('Mất kết nối', false);
+            setStatus('camera.status.disconnected', false);
           });
 
           socket.addEventListener('error', function () {
-            updateStatus('Lỗi WebSocket', false);
+            setStatus('camera.status.wsError', false);
           });
         }
 
         refreshBtn.addEventListener('click', function () {
           if (socket && socket.readyState === WebSocket.OPEN) {
-            send({ type: 'register', role: 'viewer', name: 'Trình duyệt CCTV' });
-            updateStatus('Làm mới danh sách', true);
+            send({ type: 'register', role: 'viewer', name: HuzApp.t('camera.viewerName') });
+            setStatus('camera.status.refreshing', true);
           }
         });
 
@@ -608,7 +659,17 @@
           deviceList.forEach(function (device) {
             reconnectDevice(device);
           });
-          updateStatus('Đang kết nối lại tất cả…', true);
+          setStatus('camera.status.reconnectingAll', true);
+        });
+
+        document.addEventListener('huz:langchange', function () {
+          applyStatus();
+          Object.keys(badgeStates).forEach(function (id) {
+            applyBadge(id);
+          });
+          Object.keys(overlayKeys).forEach(function (id) {
+            applyOverlay(id);
+          });
         });
 
         HuzApp.init({ requireAuth: true }).then(function (user) {

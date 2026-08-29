@@ -56,7 +56,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	}
 	ws.SetReadLimit(1 << 20)
 	clientID := newClientID()
-	client := &Client{WS: ws, ID: clientID, Name: "Thiết bị " + clientID[:6], alive: true}
+	client := &Client{WS: ws, ID: clientID, Name: "Device " + clientID[:6], alive: true}
 	if cookie, err := r.Cookie("huz_session"); err == nil {
 		client.AuthToken = strings.TrimSpace(cookie.Value)
 	}
@@ -127,14 +127,14 @@ func (h *Hub) handleRegister(client *Client, payload map[string]any, r *http.Req
 	if role == "viewer" {
 		cookie, err := r.Cookie("huz_session")
 		if err != nil || !h.tokenValid(strings.TrimSpace(cookie.Value)) {
-			h.sendError(client, "Bạn cần đăng nhập để xem camera")
+			h.sendError(client, "unauthorized", "You need to sign in to view cameras")
 			h.forceClose(client, 4001, "Unauthorized")
 			return
 		}
 		client.AuthToken = strings.TrimSpace(cookie.Value)
 	}
 	client.Role = role
-	client.Name = "Thiết bị " + client.ID[:6]
+	client.Name = "Device " + client.ID[:6]
 	if name, ok := payload["name"].(string); ok {
 		name = strings.TrimSpace(name)
 		if len(name) > 64 {
@@ -158,7 +158,7 @@ func (h *Hub) handleRegister(client *Client, payload map[string]any, r *http.Req
 		if oldID, ok := h.devices[deviceID]; ok && oldID != client.ID {
 			if oldClient, exists := h.clients[oldID]; exists && oldClient != nil {
 				h.mu.Unlock()
-				h.sendError(oldClient, "Thiết bị đã kết nối lại ở phiên mới, đóng kết nối cũ")
+				h.sendError(oldClient, "replaced", "The device reconnected in a new session; closing the old connection")
 				h.forceClose(oldClient, 4002, "replaced")
 				h.mu.Lock()
 			}
@@ -186,11 +186,11 @@ func (h *Hub) handleRelay(client *Client, payload map[string]any) {
 	target, ok := h.clients[targetID]
 	h.mu.RUnlock()
 	if !ok || target == nil || target.WS == nil {
-		h.sendError(client, "Thiết bị đích không còn kết nối")
+		h.sendError(client, "target_gone", "The target device is no longer connected")
 		return
 	}
 	if err := target.WS.WriteJSON(payload); err != nil {
-		h.sendError(client, "Thiết bị đích không còn kết nối")
+		h.sendError(client, "target_gone", "The target device is no longer connected")
 	}
 }
 
@@ -212,11 +212,11 @@ func (h *Hub) pingLoop(client *Client) {
 	}
 }
 
-func (h *Hub) sendError(client *Client, msg string) {
+func (h *Hub) sendError(client *Client, code, msg string) {
 	if client == nil || client.WS == nil {
 		return
 	}
-	_ = client.WS.WriteJSON(map[string]any{"type": "error", "message": msg})
+	_ = client.WS.WriteJSON(map[string]any{"type": "error", "code": code, "message": msg})
 }
 
 func (h *Hub) forceClose(client *Client, code int, reason string) {
