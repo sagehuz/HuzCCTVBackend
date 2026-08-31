@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title data-i18n="phone.title">Phone Remote · Huz CCTV</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+      /* ============================================================
+         Phone Remote page
+         ============================================================ */
+      .device-select {
+        appearance: none;
+        background: rgba(148, 163, 184, 0.08)
+          url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237e8ca1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")
+          no-repeat right 12px center;
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 9px 34px 9px 14px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        min-width: 210px;
+        max-width: 280px;
+        cursor: pointer;
+      }
+
+      .device-select:hover {
+        border-color: var(--border-strong);
+      }
+
+      .device-select:focus {
+        outline: none;
+        border-color: rgba(34, 197, 94, 0.6);
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+      }
+
+      .device-select option {
+        background: #0d1626;
+        color: var(--text);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #bbf7d0;
+      }
+
+      .pill.warn {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #fde68a;
+      }
+
+      .pill.off {
+        background: rgba(148, 163, 184, 0.1);
+        border-color: rgba(148, 163, 184, 0.25);
+        color: var(--muted);
+      }
+
+      .state-box {
+        max-width: 440px;
+        margin: 48px auto;
+      }
+      .phone-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 28px;
+      }
+
+      .phone-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+      }
+
+      .phone-frame {
+        width: 100%;
+        height: min(56vh, 520px);
+        background: #04060b;
+        border: 3px solid rgba(148, 163, 184, 0.28);
+        border-radius: 44px;
+        box-shadow: var(--shadow), inset 0 0 0 2px rgba(0, 0, 0, 0.55);
+        padding: 10px;
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      /* When the shared screen is landscape, rotate the frame to match. */
+      .phone-frame.landscape {
+        width: 100%;
+        height: min(40vh, 340px);
+      }
+
+      .phone-notch {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 112px;
+        height: 22px;
+        background: #000;
+        border-radius: 12px;
+        z-index: 4;
+        pointer-events: none;
+      }
+
+      .phone-frame.landscape .phone-notch {
+        top: 50%;
+        left: 15px;
+        right: auto;
+        transform: translateY(-50%);
+        width: 22px;
+        height: 112px;
+        border-radius: 12px;
+      }
+
+      .phone-frame.landscape .phone-screen {
+        border-radius: 22px;
+      }
+
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        border-radius: 34px;
+        overflow: hidden;
+        background: #000;
+        position: relative;
+        cursor: crosshair;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      .phone-screen video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        background: #000;
+        pointer-events: none;
+      }
+
+      .phone-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        text-align: center;
+        color: var(--muted);
+        background: rgba(2, 8, 23, 0.55);
+        padding: 18px;
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+
+      .phone-overlay .spinner {
+        width: 30px;
+        height: 30px;
+      }
+
+      .screen-off-badge {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        white-space: nowrap;
+        background: rgba(2, 8, 23, 0.88);
+        border: 1px solid rgba(245, 158, 11, 0.45);
+        color: #fde68a;
+        font-size: 11.5px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 6px 12px;
+        max-width: 88%;
+        overflow: hidden;
+      }
+
+      .phone-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--text-2);
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .battery-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #bbf7d0;
+      }
+
+      .gesture-hint {
+        color: var(--muted);
+        font-size: 12.5px;
+        text-align: center;
+        max-width: 300px;
+        line-height: 1.5;
+      }
+
+      .remote-panel {
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .panel-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 18px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .panel-title {
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+
+      .key-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .snapshot-preview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        margin-top: 26px;
+      }
+
+      .snapshot-preview img {
+        max-width: 260px;
+        max-height: 440px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+      }
+
+      /* On wide screens the controller cards are arranged in two columns
+         below the device frame. */
+      @media (min-width: 721px) {
+        .remote-panel {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .phone-layout {
+          justify-content: center;
+        }
+
+        .remote-panel {
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .phone-frame {
+          width: 100%;
+          height: min(50vh, 420px);
+        }
+
+        .phone-frame.landscape {
+          height: min(32vh, 260px);
+          width: 100%;
+        }
+
+        .device-select {
+          min-width: 100%;
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header" id="app-header"></header>
+
+    <main class="page">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" data-i18n="phone.pageTitle">Phone Remote</h1>
+          <p class="page-sub" data-i18n="phone.sub">Manage and control your connected Android phones.</p>
+        </div>
+        <div class="row-actions">
+          <select class="device-select" id="deviceSelect" aria-label="Android device">
+            <option value="" data-i18n="phone.select.placeholder">Select a device…</option>
+          </select>
+          <button class="btn btn-ghost" id="refreshBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            <span data-i18n="phone.refresh">Refresh</span>
+          </button>
+          <div class="pill" id="statusPill">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText" data-i18n="phone.status.awaiting">Awaiting</span>
+          </div>
+        </div>
+      </div>
+      <div class="state-box hidden" id="emptyState">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <div>
+          <div class="state-title" data-i18n="phone.empty.title">No Android device connected</div>
+          <div data-i18n="phone.empty.sub">When a device connects it appears here. Select it to view and control its screen.</div>
+        </div>
+      </div>
+
+      <div class="phone-layout hidden" id="phoneLayout">
+        <div class="phone-stage">
+          <div class="phone-frame" id="phoneFrame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen" id="phoneScreen">
+              <video id="phoneVideo" playsinline autoplay muted></video>
+              <div class="phone-overlay hidden" id="phoneOverlay">
+                <div class="spinner"></div>
+                <span id="overlayText" data-i18n="phone.overlay.connecting">Connecting to the device…</span>
+              </div>
+              <div class="screen-off-badge hidden" id="screenOffBadge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                <span data-i18n="phone.screen.offNotice">Screen is off — live preview may pause</span>
+              </div>
+            </div>
+          </div>
+          <div class="phone-meta">
+            <span id="deviceModel" class="mono">—</span>
+            <span id="screenSize" class="text-muted">—</span>
+            <span class="battery-badge hidden" id="batteryBadge">🔋</span>
+          </div>
+          <div class="gesture-hint" data-i18n="phone.gesture.hint">Tap, drag or hold on the phone screen to control it</div>
+        </div>
+
+        <div class="remote-panel" id="remotePanel">
+          <div class="panel-card">
+            <div class="panel-title" data-i18n="phone.section.screen">Screen sharing</div>
+            <button class="btn btn-primary btn-block" id="screenStartBtn" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 3 14 9-14 9V3Z"/></svg>
+              <span data-i18n="phone.screen.start">Start screen share</span>
+            </button>
+            <button class="btn btn-ghost btn-block" id="screenStopBtn" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              <span data-i18n="phone.screen.stop">Stop screen share</span>
+            </button>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-title" data-i18n="phone.section.nav">Navigation</div>
+            <div class="key-grid">
+              <button class="btn btn-ghost" type="button" data-key="back" disabled data-i18n="phone.key.back">Back</button>
+              <button class="btn btn-ghost" type="button" data-key="home" disabled data-i18n="phone.key.home">Home</button>
+              <button class="btn btn-ghost" type="button" data-key="recent" disabled data-i18n="phone.key.recent">Recent</button>
+              <button class="btn btn-ghost" type="button" data-key="menu" disabled data-i18n="phone.key.menu">Menu</button>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-title" data-i18n="phone.section.power">Screen power</div>
+            <button class="btn btn-ghost btn-block" id="screenOnBtn" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>
+              <span data-i18n="phone.screenOn">Turn screen on</span>
+            </button>
+            <button class="btn btn-ghost btn-block" id="screenOffBtn" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>
+              <span data-i18n="phone.screenOff">Turn screen off</span>
+            </button>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-title" data-i18n="phone.section.media">Media</div>
+            <div class="key-grid">
+              <button class="btn btn-ghost" type="button" data-key="volume-up" disabled data-i18n="phone.key.volumeUp">Vol +</button>
+              <button class="btn btn-ghost" type="button" data-key="volume-down" disabled data-i18n="phone.key.volumeDown">Vol −</button>
+            </div>
+            <button class="btn btn-ghost btn-block" id="snapshotBtn" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>
+              <span data-i18n="phone.snapshot">Snapshot</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="snapshot-preview hidden" id="snapshotPreview"></div>
+    </main>
+
+    <footer class="site-footer">
+      <span data-i18n="footer.version">Server version</span>
+      <span class="mono" id="footerVersion">–</span>
+    </footer>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+      (function () {
+        'use strict';
+        /* ---------- Element refs ---------- */
+        var deviceSelect = document.getElementById('deviceSelect');
+        var refreshBtn = document.getElementById('refreshBtn');
+        var statusText = document.getElementById('statusText');
+        var statusDot = document.getElementById('statusDot');
+        var statusPill = document.getElementById('statusPill');
+        var emptyState = document.getElementById('emptyState');
+        var phoneLayout = document.getElementById('phoneLayout');
+        var phoneScreen = document.getElementById('phoneScreen');
+        var phoneVideo = document.getElementById('phoneVideo');
+        var phoneFrame = document.getElementById('phoneFrame');
+        var phoneOverlay = document.getElementById('phoneOverlay');
+        var overlayText = document.getElementById('overlayText');
+        var screenOffBadge = document.getElementById('screenOffBadge');
+        var deviceModel = document.getElementById('deviceModel');
+        var screenSize = document.getElementById('screenSize');
+        var batteryBadge = document.getElementById('batteryBadge');
+        var snapshotPreview = document.getElementById('snapshotPreview');
+        var screenStartBtn = document.getElementById('screenStartBtn');
+        var screenStopBtn = document.getElementById('screenStopBtn');
+        var screenOnBtn = document.getElementById('screenOnBtn');
+        var screenOffBtn = document.getElementById('screenOffBtn');
+        var snapshotBtn = document.getElementById('snapshotBtn');
+        var remotePanel = document.getElementById('remotePanel');
+
+        /* ---------- State ---------- */
+        var deviceList = [];
+        var selectedDeviceId = '';
+        var socket = null;
+        var wsConnected = false;
+        var pc = null;
+        var streaming = false;
+        var cameraStream = null;
+        var screenStream = null;
+        var deviceInfo = {};
+        var deviceStatus = {};
+        var gesture = null;
+        var lastStatusKey = 'phone.status.awaiting';
+
+        var rtcConfiguration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        var TAP_MOVE_PX = 12;
+        var TAP_MAX_MS = 450;
+
+        var panelButtons = remotePanel.querySelectorAll('button');
+
+        /* ---------- Send helpers ---------- */
+        function send(obj) {
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(obj));
+          }
+        }
+
+        function sendControl(action, extra) {
+          if (!selectedDeviceId) return;
+          var payload = { type: 'control', targetId: selectedDeviceId, action: action };
+          if (extra) {
+            Object.keys(extra).forEach(function (k) {
+              payload[k] = extra[k];
+            });
+          }
+          send(payload);
+        }
+
+        function requireDevice() {
+          if (selectedDeviceId) return true;
+          HuzApp.toast(HuzApp.t('phone.toast.noDevice'), 'error');
+          return false;
+        }
+
+        /* ---------- Status UI ---------- */
+        function setStatus(key, kind) {
+          if (key) {
+            lastStatusKey = key;
+            statusText.textContent = HuzApp.t(key);
+          }
+          statusDot.className = 'status-dot' + (kind ? ' ' + kind : '');
+          statusPill.className = 'pill' + (kind ? ' ' + kind : '');
+        }
+
+        function setOverlay(key, show) {
+          if (!show) {
+            phoneOverlay.classList.add('hidden');
+            return;
+          }
+          if (key) overlayText.textContent = HuzApp.t(key);
+          phoneOverlay.classList.remove('hidden');
+        }
+
+        function setText(el, v) {
+          el.textContent = v || '—';
+        }
+
+        function setControlsEnabled(enabled) {
+          panelButtons.forEach(function (b) {
+            b.disabled = !enabled;
+          });
+        }
+
+        function updateDeviceStatusUI() {
+          if (typeof deviceStatus.batteryLevel === 'number') {
+            batteryBadge.classList.remove('hidden');
+            batteryBadge.textContent =
+              '🔋 ' + Math.round(deviceStatus.batteryLevel) + '%' + (deviceStatus.batteryCharging ? ' ⚡' : '');
+          } else {
+            batteryBadge.classList.add('hidden');
+          }
+
+          if (deviceStatus.screenOn === false) {
+            screenOffBadge.classList.remove('hidden');
+            screenOnBtn.disabled = false;
+            screenOffBtn.disabled = true;
+          } else if (deviceStatus.screenOn === true) {
+            screenOffBadge.classList.add('hidden');
+            screenOnBtn.disabled = true;
+            screenOffBtn.disabled = false;
+          } else {
+            screenOffBadge.classList.add('hidden');
+            screenOnBtn.disabled = false;
+            screenOffBtn.disabled = false;
+          }
+
+          // Screen sharing is a separate stream from the camera. "Stop" only makes sense
+          // while sharing; "Start" stays enabled (the Android side attaches this viewer to
+          // an already-running share when needed, e.g. after a page reload).
+          if (deviceStatus.screenStreaming === true) {
+            screenStopBtn.disabled = false;
+          } else if (deviceStatus.screenStreaming === false) {
+            screenStopBtn.disabled = true;
+          }
+        }
+
+        /* ---------- Device list ---------- */
+        function renderDeviceList(devices) {
+          deviceList = Array.isArray(devices) ? devices : [];
+          var cur = selectedDeviceId;
+          var stillThere = cur && deviceList.some(function (d) { return d.id === cur; });
+
+          if (!stillThere && cur) {
+            selectDevice('');
+          }
+
+          deviceSelect.innerHTML = '';
+          var ph = document.createElement('option');
+          ph.value = '';
+          ph.textContent = HuzApp.t('phone.select.placeholder');
+          deviceSelect.appendChild(ph);
+          deviceList.forEach(function (d) {
+            var opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = (d.kind === 'phone' ? '📱 ' : '') + (d.name || d.id.slice(0, 8));
+            deviceSelect.appendChild(opt);
+          });
+          deviceSelect.value = selectedDeviceId || '';
+
+          if (!selectedDeviceId && deviceList.length > 0) {
+            deviceSelect.value = deviceList[0].id;
+            selectDevice(deviceList[0].id);
+          }
+
+          emptyState.classList.toggle('hidden', deviceList.length > 0);
+          phoneLayout.classList.toggle('hidden', deviceList.length === 0);
+        }
+        /* ---------- Device selection / WebRTC ---------- */
+        function resetDeviceUi() {
+          closePeerConnection();
+          setOverlay('phone.overlay.connecting', true);
+          phoneFrame.classList.remove('landscape');
+          phoneFrame.style.aspectRatio = '';
+          deviceInfo = {};
+          deviceStatus = {};
+          setText(deviceModel, '');
+          setText(screenSize, '');
+          batteryBadge.classList.add('hidden');
+          screenOffBadge.classList.add('hidden');
+          snapshotPreview.classList.add('hidden');
+          snapshotPreview.innerHTML = '';
+          streaming = false;
+        }
+
+        /* Rotate the phone frame to match the shared screen orientation. */
+        function updatePhoneOrientation() {
+          var w = phoneVideo.videoWidth;
+          var h = phoneVideo.videoHeight;
+          if (!w || !h) return;
+          var isLandscape = w > h;
+          phoneFrame.classList.toggle('landscape', isLandscape);
+          // aspect-ratio is width/height; <1 portrait, >1 landscape.
+          phoneFrame.style.aspectRatio = (w / h).toFixed(3);
+          console.log('[phone] screen orientation', isLandscape ? 'landscape' : 'portrait', w + 'x' + h);
+        }
+
+        function selectDevice(id) {
+          if (id === selectedDeviceId) return;
+          selectedDeviceId = id || '';
+          if (!selectedDeviceId) {
+            resetDeviceUi();
+            setControlsEnabled(false);
+            setStatus('phone.status.noDevice', 'off');
+            return;
+          }
+          resetDeviceUi();
+          setControlsEnabled(true);
+          updateDeviceStatusUI();
+          setStatus('phone.status.connecting', 'warn');
+          send({ type: 'watch', targetId: selectedDeviceId });
+          sendControl('capabilities');
+        }
+
+        function closePeerConnection() {
+          if (pc) {
+            pc.ontrack = null;
+            pc.onicecandidate = null;
+            pc.onconnectionstatechange = null;
+            try {
+              pc.close();
+            } catch (_e) { /* ignore */ }
+            pc = null;
+          }
+          cameraStream = null;
+          screenStream = null;
+          phoneVideo.removeAttribute('src');
+          phoneVideo.srcObject = null;
+        }
+
+        function acceptOffer(message) {
+          if (!message || !message.sdp || !message.from) return;
+          try {
+            closePeerConnection();
+            // The HuzHome app sends the SDP as a { type, sdp } object (same wire
+            // format the camera page uses). Accept a bare string defensively too.
+            var offer = message.sdp;
+            if (typeof offer === 'string') {
+              offer = { type: 'offer', sdp: offer };
+            }
+            var newPc = new RTCPeerConnection(rtcConfiguration);
+            pc = newPc;
+            console.log('[phone] WebRTC offer from', message.from);
+            newPc.ontrack = function (e) {
+              // The HuzHome app sends two separate streams: the camera ("camera-stream")
+              // and the shared screen ("screen-stream"). Keep both and show the screen one
+              // while it is active, otherwise the camera.
+              if (e.streams && e.streams[0]) {
+                var stream = e.streams[0];
+                if (stream.id === 'screen-stream') {
+                  screenStream = stream;
+                } else {
+                  cameraStream = stream;
+                }
+                var target = screenStream || cameraStream;
+                phoneVideo.srcObject = target;
+                phoneVideo.play().catch(function () { /* autoplay muted should succeed */ });
+              }
+              streaming = true;
+              setStatus('phone.status.streaming', '');
+              setOverlay(null, false);
+              console.log('[phone] video track received', e.streams && e.streams[0] && e.streams[0].id);
+            };
+            newPc.onicecandidate = function (event) {
+              if (!event.candidate || !socket || socket.readyState !== WebSocket.OPEN) return;
+              send({
+                type: 'ice-candidate',
+                targetId: message.from,
+                candidate: event.candidate.toJSON()
+              });
+            };
+            newPc.onconnectionstatechange = function () {
+              if (pc !== newPc) return; // stale handler from a previous offer
+              console.log('[phone] WebRTC state', newPc.connectionState);
+              if (newPc.connectionState === 'failed') {
+                setStatus('phone.status.disconnected', 'off');
+                setOverlay('phone.overlay.connectFailed', true);
+              } else if (newPc.connectionState === 'connected') {
+                if (!streaming) {
+                  setStatus('phone.status.connecting', 'warn');
+                  setOverlay('phone.overlay.awaitingShare', true);
+                }
+              }
+            };
+            newPc.setRemoteDescription(offer)
+              .then(function () {
+                return newPc.createAnswer();
+              })
+              .then(function (answer) {
+                return newPc.setLocalDescription(answer).then(function () {
+                  send({
+                    type: 'answer',
+                    targetId: message.from,
+                    sdp: { type: answer.type, sdp: answer.sdp }
+                  });
+                });
+              })
+              .catch(function (err) {
+                console.error('answer error', err);
+              });
+          } catch (err) {
+            console.error('acceptOffer error', err);
+          }
+        }
+
+        function addIceCandidate(message) {
+          if (!pc || !message || !message.candidate) return;
+          try {
+            pc.addIceCandidate(message.candidate).catch(function () { /* ignore */ });
+          } catch (_e) { /* ignore */ }
+        }
+        /* ---------- Message handlers ---------- */
+        function handleCapabilities(msg) {
+          if (!msg || msg.from !== selectedDeviceId) return;
+          deviceInfo = (msg && msg.data) || {};
+          var model = deviceInfo.model || deviceInfo.deviceModel || '';
+          if (deviceInfo.brand && deviceInfo.model) model = deviceInfo.brand + ' ' + deviceInfo.model;
+          setText(deviceModel, model);
+          var ss = deviceInfo.screenSize;
+          if (ss && ss.width && ss.height) {
+            setText(screenSize, ss.width + '×' + ss.height);
+          }
+          // If the device is already sharing its screen (e.g. the page was reloaded), join
+          // the running share. The app attaches this viewer without another consent dialog.
+          if (deviceInfo.screenStreaming === true && !screenStream && selectedDeviceId) {
+            sendControl('screen-start');
+          }
+        }
+
+        function handleDeviceStatus(msg) {
+          if (!msg || msg.from !== selectedDeviceId) return;
+          deviceStatus = (msg && msg.data) || {};
+          updateDeviceStatusUI();
+          // Same auto-attach: joining a device that is already streaming its screen.
+          if (deviceStatus.screenStreaming === true && !screenStream && selectedDeviceId) {
+            sendControl('screen-start');
+          }
+        }
+
+        function handleSnapshot(msg) {
+          if (!msg || msg.from !== selectedDeviceId || !msg.data || !msg.data.jpegBase64) return;
+          snapshotPreview.innerHTML = '';
+          var img = document.createElement('img');
+          img.src = 'data:image/jpeg;base64,' + msg.data.jpegBase64;
+          img.alt = 'snapshot';
+          var closeBtn = document.createElement('button');
+          closeBtn.type = 'button';
+          closeBtn.className = 'btn btn-ghost btn-sm';
+          closeBtn.textContent = HuzApp.t('phone.snapshot.close');
+          closeBtn.addEventListener('click', function () {
+            snapshotPreview.classList.add('hidden');
+          });
+          snapshotPreview.appendChild(img);
+          snapshotPreview.appendChild(closeBtn);
+          snapshotPreview.classList.remove('hidden');
+        }
+
+        function handleError(msg) {
+          if (!msg) return;
+          var key = 'ws.' + msg.code;
+          var text = HuzApp.t(key);
+          if (text === key) text = msg.message || '';
+          if (text) HuzApp.toast(text, 'error');
+          if (msg.code === 'unauthorized') {
+            HuzApp.redirectToLogin();
+          }
+          if (msg.code === 'target_gone') {
+            setOverlay('phone.overlay.connectFailed', true);
+          }
+        }
+
+        function onSocketMessage(event) {
+          var msg;
+          try {
+            msg = JSON.parse(event.data);
+          } catch (_e) {
+            return;
+          }
+          if (!msg || !msg.type) return;
+          switch (msg.type) {
+            case 'device-list':
+              renderDeviceList(msg.devices);
+              break;
+            case 'offer':
+              acceptOffer(msg);
+              break;
+            case 'ice-candidate':
+              addIceCandidate(msg);
+              break;
+            case 'capabilities':
+              handleCapabilities(msg);
+              break;
+            case 'device-status':
+              handleDeviceStatus(msg);
+              break;
+            case 'snapshot':
+              handleSnapshot(msg);
+              break;
+            case 'error':
+              handleError(msg);
+              break;
+            default:
+              break;
+          }
+        }
+
+        /* ---------- WebSocket ---------- */
+        function initSocket() {
+          var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+          socket = new WebSocket(proto + location.host + '/ws/signal');
+          socket.addEventListener('open', function () {
+            wsConnected = true;
+            send({ type: 'register', role: 'viewer', name: HuzApp.t('phone.viewerName') });
+            if (selectedDeviceId) {
+              setStatus('phone.status.connecting', 'warn');
+            } else {
+              setStatus(deviceList.length ? 'phone.status.ready' : 'phone.status.noDevice', 'off');
+            }
+          });
+          socket.addEventListener('message', onSocketMessage);
+          socket.addEventListener('close', function () {
+            wsConnected = false;
+            setStatus('phone.status.disconnected', 'off');
+            setTimeout(function () {
+              if (socket && socket.readyState === WebSocket.CLOSED) initSocket();
+            }, 3000);
+          });
+          socket.addEventListener('error', function () {
+            if (socket) {
+              try {
+                socket.close();
+              } catch (_e) { /* ignore */ }
+            }
+          });
+        }
+        /* ---------- Gesture capture on the phone screen ---------- */
+        function normalizePoint(clientX, clientY) {
+          var rect = phoneScreen.getBoundingClientRect();
+          var x = rect.width ? (clientX - rect.left) / rect.width : 0;
+          var y = rect.height ? (clientY - rect.top) / rect.height : 0;
+          return {
+            x: Math.max(0, Math.min(1, x)),
+            y: Math.max(0, Math.min(1, y))
+          };
+        }
+
+        function onPointerDown(e) {
+          if (!selectedDeviceId) return;
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          e.preventDefault();
+          if (phoneScreen.setPointerCapture) {
+            try {
+              phoneScreen.setPointerCapture(e.pointerId);
+            } catch (_e) { /* ignore */ }
+          }
+          if (!gesture) {
+            gesture = {
+              startTime: Date.now(),
+              start: null,
+              pointers: {},
+              pinchActive: false,
+              fingerA: null,
+              fingerB: null
+            };
+          }
+          var p = normalizePoint(e.clientX, e.clientY);
+          gesture.pointers[e.pointerId] = p;
+          if (!gesture.start) gesture.start = p;
+
+          var ids = Object.keys(gesture.pointers);
+          if (ids.length === 2 && !gesture.pinchActive) {
+            var a = gesture.pointers[ids[0]];
+            var b = gesture.pointers[ids[1]];
+            gesture.pinchActive = true;
+            gesture.fingerA = { sx: a.x, sy: a.y, ex: a.x, ey: a.y };
+            gesture.fingerB = { sx: b.x, sy: b.y, ex: b.x, ey: b.y };
+          }
+        }
+
+        function onPointerMove(e) {
+          if (!gesture) return;
+          var p = normalizePoint(e.clientX, e.clientY);
+          gesture.pointers[e.pointerId] = p;
+          if (gesture.pinchActive) {
+            var ids = Object.keys(gesture.pointers);
+            if (ids.length === 2) {
+              var a = gesture.pointers[ids[0]];
+              var b = gesture.pointers[ids[1]];
+              gesture.fingerA.ex = a.x;
+              gesture.fingerA.ey = a.y;
+              gesture.fingerB.ex = b.x;
+              gesture.fingerB.ey = b.y;
+            }
+          }
+        }
+
+        function onPointerUp(e) {
+          if (!gesture) return;
+          var hadPinch = gesture.pinchActive;
+          var p = normalizePoint(e.clientX, e.clientY);
+          gesture.pointers[e.pointerId] = p;
+          delete gesture.pointers[e.pointerId];
+
+          // Pinch: two fingers went down; send when fewer than two remain.
+          if (hadPinch && Object.keys(gesture.pointers).length < 2) {
+            var pinchDur = Math.max(150, Math.min(Date.now() - gesture.startTime, 800));
+            sendControl('pinch', {
+              valueX1: gesture.fingerA.sx, valueY1: gesture.fingerA.sy,
+              valueX2: gesture.fingerB.sx, valueY2: gesture.fingerB.sy,
+              valueX3: gesture.fingerA.ex, valueY3: gesture.fingerA.ey,
+              valueX4: gesture.fingerB.ex, valueY4: gesture.fingerB.ey,
+              valueDurationMs: pinchDur
+            });
+            gesture = null;
+            return;
+          }
+
+          if (Object.keys(gesture.pointers).length > 0) return;
+
+          // Single-pointer gesture: tap / long-press / swipe.
+          var duration = Date.now() - gesture.startTime;
+          var dx = (p.x - gesture.start.x) * phoneScreen.clientWidth;
+          var dy = (p.y - gesture.start.y) * phoneScreen.clientHeight;
+          var moved = Math.sqrt(dx * dx + dy * dy);
+
+          if (moved < TAP_MOVE_PX) {
+            if (duration < TAP_MAX_MS) {
+              sendControl('tap', { valueX: p.x, valueY: p.y });
+            } else {
+              sendControl('long-press', {
+                valueX: p.x,
+                valueY: p.y,
+                valueDurationMs: Math.max(500, Math.min(duration, 1500))
+              });
+            }
+          } else {
+            sendControl('swipe', {
+              valueX1: gesture.start.x, valueY1: gesture.start.y,
+              valueX2: p.x, valueY2: p.y,
+              valueDurationMs: Math.max(120, Math.min(duration, 800))
+            });
+          }
+          gesture = null;
+        }
+        /* ---------- Controls ---------- */
+        function initControls() {
+          deviceSelect.addEventListener('change', function () {
+            selectDevice(deviceSelect.value);
+          });
+
+          refreshBtn.addEventListener('click', function () {
+            if (!selectedDeviceId) return;
+            send({ type: 'watch', targetId: selectedDeviceId });
+            sendControl('capabilities');
+            setStatus('phone.status.connecting', 'warn');
+            setOverlay('phone.overlay.connecting', true);
+          });
+
+          screenStartBtn.addEventListener('click', function () {
+            if (requireDevice()) sendControl('screen-start');
+          });
+          screenStopBtn.addEventListener('click', function () {
+            if (requireDevice()) sendControl('screen-stop');
+          });
+          screenOnBtn.addEventListener('click', function () {
+            if (requireDevice()) sendControl('screen-on');
+          });
+          screenOffBtn.addEventListener('click', function () {
+            if (requireDevice()) sendControl('screen-off');
+          });
+          snapshotBtn.addEventListener('click', function () {
+            if (requireDevice()) sendControl('snapshot');
+          });
+
+          remotePanel.querySelectorAll('[data-key]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              if (requireDevice()) {
+                sendControl('key', { key: btn.getAttribute('data-key') });
+              }
+            });
+          });
+
+          phoneScreen.addEventListener('pointerdown', onPointerDown);
+          phoneScreen.addEventListener('pointermove', onPointerMove);
+          phoneScreen.addEventListener('pointerup', onPointerUp);
+          phoneScreen.addEventListener('pointercancel', onPointerUp);
+
+          phoneVideo.addEventListener('playing', function () {
+            streaming = true;
+            setStatus('phone.status.streaming', '');
+            setOverlay(null, false);
+          });
+          phoneVideo.addEventListener('waiting', function () {
+            if (streaming) setOverlay('phone.overlay.streamLost', true);
+          });
+          phoneVideo.addEventListener('loadedmetadata', updatePhoneOrientation);
+          phoneVideo.addEventListener('resize', updatePhoneOrientation);
+        }
+
+        /* ---------- Language change ---------- */
+        document.addEventListener('huz:langchange', function () {
+          statusText.textContent = HuzApp.t(lastStatusKey);
+          renderDeviceList(deviceList);
+          var closeBtn = snapshotPreview.querySelector('.btn');
+          if (closeBtn) closeBtn.textContent = HuzApp.t('phone.snapshot.close');
+        });
+
+        /* ---------- Init ---------- */
+        HuzApp.init({ requireAuth: true }).then(function (user) {
+          if (!user) return;
+          initControls();
+          initSocket();
+        });
+
+
+
+
+
+      })();
+    </script>
+  </body>
+</html>
+
+

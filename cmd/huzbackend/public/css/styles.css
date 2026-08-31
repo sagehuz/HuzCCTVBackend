@@ -130,11 +130,106 @@ a:hover {
   letter-spacing: 0.04em;
 }
 
-.header-nav {
+/* Collapsed menu button + dropdown panel */
+.menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--text-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.menu-btn:hover,
+.menu-btn.open {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: var(--text);
+}
+
+.menu-btn svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+.menu-btn > svg:last-child {
+  width: 13px;
+  height: 13px;
+  transition: transform 0.15s ease;
+}
+
+.menu-btn.open > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 256px;
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--shadow);
+  z-index: 200;
+}
+
+.menu-panel[hidden] {
+  display: none;
+}
+
+.menu-panel:not([hidden]) {
+  animation: menu-panel-in 0.16s ease;
+}
+
+@keyframes menu-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-panel .nav-link {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 8px;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.menu-panel .nav-link svg {
+  width: 18px;
+  height: 18px;
 }
 
 .nav-link {
@@ -279,6 +374,18 @@ a:hover {
 .btn-ghost:hover:not(:disabled) {
   background: rgba(148, 163, 184, 0.15);
   color: var(--text);
+}
+
+.btn-donate {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--primary-2);
+  border-color: rgba(34, 197, 94, 0.32);
+}
+
+.btn-donate:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.18);
+  color: #a7f3d0;
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.22);
 }
 
 .btn-danger {
@@ -744,6 +851,17 @@ a:hover {
   padding: 24px 0 0;
 }
 
+.site-footer {
+  padding: 16px 20px 28px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.site-footer .mono {
+  margin-left: 8px;
+}
+
 /* ============================================================
    Responsive
    ============================================================ */
@@ -763,18 +881,12 @@ a:hover {
     padding: 10px 16px;
   }
 
-  .header-nav {
-    order: 3;
-    width: 100%;
-    overflow-x: auto;
-    margin-left: 0;
-    padding-bottom: 2px;
-  }
-
-  .nav-link {
-    padding: 7px 11px;
-    font-size: 13px;
-    white-space: nowrap;
+  .menu-panel {
+    position: fixed;
+    top: 64px; /* JS overrides this to sit just below the header */
+    left: 12px;
+    right: 12px;
+    min-width: 0;
   }
 
   .header-user .username {

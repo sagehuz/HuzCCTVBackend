@@ -177,6 +177,319 @@
         height: 30px;
       }
 
+      /* Khung video có thể zoom kỹ thuật số (phía viewer) */
+      .zoom-stage {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+        z-index: 1;
+      }
+
+      .zoom-stage video {
+        transform-origin: center;
+        will-change: transform;
+      }
+
+      .zoom-stage.panning {
+        cursor: grabbing;
+      }
+
+      /* Thanh điều khiển zoom kỹ thuật số */
+      .camera-controls {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 6px;
+        background: rgba(2, 8, 23, 0.72);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+      }
+
+      .camera-zoom-btn {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--text-2);
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .camera-zoom-btn:hover {
+        background: rgba(148, 163, 184, 0.18);
+        color: var(--text);
+      }
+
+      .camera-zoom-pct {
+        min-width: 46px;
+        text-align: center;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--text-2);
+        font-family: var(--mono);
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* Bàn điều khiển PTZ (gửi lệnh control tới thiết bị) */
+      .ptz-pad {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: repeat(3, 34px);
+        grid-template-rows: repeat(3, 34px);
+        gap: 5px;
+        padding: 7px;
+        background: rgba(2, 8, 23, 0.72);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+      }
+
+      .ptz-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(148, 163, 184, 0.1);
+        color: var(--text-2);
+        cursor: pointer;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease;
+      }
+
+      .ptz-btn:hover {
+        background: rgba(148, 163, 184, 0.22);
+        color: var(--text);
+      }
+
+      .ptz-btn:active,
+      .ptz-btn.active {
+        background: var(--accent);
+        color: #04131d;
+        transform: scale(0.92);
+      }
+
+      .ptz-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .ptz-up {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .ptz-left {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .ptz-home {
+        grid-column: 2;
+        grid-row: 2;
+        background: rgba(34, 197, 94, 0.16);
+        color: #bbf7d0;
+      }
+
+      .ptz-home:hover {
+        background: rgba(34, 197, 94, 0.3);
+        color: #dcfce7;
+      }
+
+      .ptz-right {
+        grid-column: 3;
+        grid-row: 2;
+      }
+
+      .ptz-down {
+        grid-column: 2;
+        grid-row: 3;
+      }
+
+      /* Thanh điều khiển thiết bị (device controls) */
+      .camera-cell-controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        background: rgba(13, 22, 38, 0.6);
+      }
+
+      .ctrl-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ctrl-group.ctrl-tail {
+        margin-left: auto;
+      }
+
+      .ctrl-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .ctrl-value {
+        font-size: 12px;
+        font-family: var(--mono);
+        color: var(--text-2);
+        min-width: 38px;
+        text-align: right;
+      }
+
+      .ctrl-slider {
+        width: 120px;
+        accent-color: var(--primary);
+        cursor: pointer;
+      }
+
+      .ctrl-slider:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .ctrl-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 10px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: rgba(148, 163, 184, 0.08);
+        color: var(--text-2);
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .ctrl-btn:hover {
+        background: rgba(148, 163, 184, 0.18);
+        color: var(--text);
+      }
+
+      .ctrl-btn.on {
+        background: rgba(34, 197, 94, 0.16);
+        border-color: rgba(34, 197, 94, 0.4);
+        color: #bbf7d0;
+      }
+
+      .ctrl-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .ctrl-btn svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .battery-badge,
+      .motion-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text-2);
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid var(--border);
+      }
+
+      .motion-badge-live {
+        background: rgba(245, 158, 11, 0.18);
+        border-color: rgba(245, 158, 11, 0.45);
+        color: #fde68a;
+        animation: pulse-motion 1.4s ease-in-out infinite;
+      }
+
+      @keyframes pulse-motion {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.45;
+        }
+      }
+
+      /* Xem trước ảnh chụp nhanh (snapshot) */
+      .snapshot-preview {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(2, 8, 23, 0.85);
+        padding: 18px;
+      }
+
+      .snapshot-preview img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--border-strong);
+        background: #000;
+      }
+
+      .snapshot-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        background: rgba(2, 8, 23, 0.72);
+        color: var(--text-2);
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .snapshot-close:hover {
+        color: var(--text);
+        background: rgba(148, 163, 184, 0.18);
+      }
+
       .empty-state {
         display: flex;
         flex-direction: column;
@@ -252,6 +565,11 @@
         </div>
       </div>
     </main>
+
+    <footer class="site-footer">
+      <span data-i18n="footer.version">Server version</span>
+      <span class="mono" id="footerVersion">–</span>
+    </footer>
 
     <script src="/js/i18n.js"></script>
     <script src="/js/common.js"></script>
@@ -386,6 +704,549 @@
           updateStats();
         }
 
+        /* ---------------------------------------------------------------
+           Zoom kỹ thuật số (phía viewer) + điều khiển PTZ (gửi 'control')
+           --------------------------------------------------------------- */
+        var ZOOM_MIN = 1;
+        var ZOOM_MAX = 6;
+        var ZOOM_STEP = 1.35;
+        var zoomStates = {};
+
+        var PTZ_ICONS = {
+          up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+          down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
+          left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>',
+          right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+          home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>'
+        };
+
+        var DEV_ICONS = {
+          torch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+          switch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg>',
+          snapshot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>',
+          motion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+          focus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v6"/><path d="M12 15v6"/><path d="M3 12h6"/><path d="M15 12h6"/></svg>'
+        };
+
+        function getStage(id) {
+          var cell = getCell(id);
+          return cell ? cell.querySelector('.zoom-stage') : null;
+        }
+
+        function getZoomPct(id) {
+          var cell = getCell(id);
+          return cell ? cell.querySelector('.camera-zoom-pct') : null;
+        }
+
+        function getZoom(id) {
+          if (!zoomStates[id]) zoomStates[id] = { scale: 1, tx: 0, ty: 0 };
+          return zoomStates[id];
+        }
+
+        function clampZoom(id) {
+          var z = getZoom(id);
+          var stage = getStage(id);
+          var w = stage ? stage.clientWidth : 0;
+          var h = stage ? stage.clientHeight : 0;
+          if (z.scale < ZOOM_MIN) z.scale = ZOOM_MIN;
+          if (z.scale > ZOOM_MAX) z.scale = ZOOM_MAX;
+          var maxX = Math.max(0, ((z.scale - 1) * w) / 2);
+          var maxY = Math.max(0, ((z.scale - 1) * h) / 2);
+          if (z.tx < -maxX) z.tx = -maxX;
+          if (z.tx > maxX) z.tx = maxX;
+          if (z.ty < -maxY) z.ty = -maxY;
+          if (z.ty > maxY) z.ty = maxY;
+        }
+
+        function applyZoom(id) {
+          var video = getVideo(id);
+          if (!video) return;
+          var z = getZoom(id);
+          video.style.transform =
+            'translate(' + z.tx + 'px, ' + z.ty + 'px) scale(' + z.scale + ')';
+          var pct = getZoomPct(id);
+          if (pct) pct.textContent = Math.round(z.scale * 100) + '%';
+        }
+
+        function resetZoom(id) {
+          zoomStates[id] = { scale: 1, tx: 0, ty: 0 };
+          applyZoom(id);
+        }
+
+        function zoomDigital(id, factor, focalX, focalY) {
+          var stage = getStage(id);
+          if (!stage) return;
+          var z = getZoom(id);
+          var w = stage.clientWidth || 0;
+          var h = stage.clientHeight || 0;
+          var px = focalX != null ? focalX : w / 2;
+          var py = focalY != null ? focalY : h / 2;
+          var target = z.scale * factor;
+          if (target < ZOOM_MIN) target = ZOOM_MIN;
+          if (target > ZOOM_MAX) target = ZOOM_MAX;
+          var k = target / z.scale;
+          if (k === 1) return;
+          z.tx = (1 - k) * (px - w / 2) + k * z.tx;
+          z.ty = (1 - k) * (py - h / 2) + k * z.ty;
+          z.scale = target;
+          clampZoom(id);
+          applyZoom(id);
+        }
+
+        /* ---------------------------------------------------------------
+           Điều khiển thiết bị — protocol 'control' của app HuzHome:
+           actions: zoom, zoom-reset, torch, switch-camera, capabilities,
+           snapshot, focus, focus-reset, exposure, pan, pan-reset, motion
+           --------------------------------------------------------------- */
+        var deviceStates = {};
+
+        function deviceState(id) {
+          if (!deviceStates[id]) {
+            deviceStates[id] = {
+              zoom: 1,
+              maxZoom: 1,
+              torch: false,
+              supportsTorch: false,
+              ev: 0,
+              evMin: 0,
+              evMax: 0,
+              panX: 0,
+              panY: 0,
+              supportsPan: true,
+              motion: true,
+              motionLive: false,
+              battery: -1,
+              charging: false,
+            };
+          }
+          return deviceStates[id];
+        }
+
+        function sendDevice(id, action, extra) {
+          var payload = { type: 'control', targetId: id, action: action };
+          if (extra) {
+            Object.keys(extra).forEach(function (k) {
+              payload[k] = extra[k];
+            });
+          }
+          send(payload);
+        }
+
+        function formatZoom(z) {
+          return z >= 10 ? z.toFixed(0) + 'x' : z.toFixed(1) + 'x';
+        }
+
+        function syncDeviceUi(id) {
+          var cell = getCell(id);
+          if (!cell) return;
+          var d = deviceState(id);
+
+          var zoomSlider = cell.querySelector('.ctrl-zoom');
+          if (zoomSlider) {
+            zoomSlider.min = '1';
+            zoomSlider.max = String(Math.max(1, d.maxZoom));
+            zoomSlider.step = '0.1';
+            zoomSlider.value = String(d.zoom);
+          }
+          var zoomVal = cell.querySelector('.ctrl-zoom-val');
+          if (zoomVal) zoomVal.textContent = formatZoom(d.zoom);
+
+          var evSlider = cell.querySelector('.ctrl-ev');
+          if (evSlider) {
+            evSlider.min = String(d.evMin);
+            evSlider.max = String(d.evMax);
+            evSlider.value = String(d.ev);
+            evSlider.disabled = d.evMin === d.evMax;
+          }
+          var evVal = cell.querySelector('.ctrl-ev-val');
+          if (evVal) evVal.textContent = d.ev > 0 ? '+' + d.ev : String(d.ev);
+
+          var torchBtn = cell.querySelector('[data-dev="torch"]');
+          if (torchBtn) {
+            torchBtn.classList.toggle('on', d.torch);
+            torchBtn.disabled = !d.supportsTorch;
+          }
+          var motionBtn = cell.querySelector('[data-dev="motion"]');
+          if (motionBtn) motionBtn.classList.toggle('on', d.motion);
+
+          var panPad = cell.querySelector('.ptz-pad');
+          if (panPad) panPad.classList.toggle('hidden', !d.supportsPan);
+
+          var motionBadge = cell.querySelector('.motion-badge');
+          if (motionBadge) {
+            motionBadge.classList.toggle('hidden', !d.motion);
+            motionBadge.classList.toggle('motion-badge-live', d.motionLive);
+          }
+          var battery = cell.querySelector('.battery-badge');
+          if (battery) {
+            if (d.battery >= 0) {
+              battery.textContent = (d.charging ? '⚡ ' : '🔋 ') + d.battery + '%';
+              battery.classList.remove('hidden');
+            } else {
+              battery.classList.add('hidden');
+            }
+          }
+        }
+
+        function requestCapabilities(id) {
+          sendDevice(id, 'capabilities');
+        }
+
+        function applyCapabilities(msg) {
+          var id = msg.from;
+          if (!id || !msg.data) return;
+          var d = deviceState(id);
+          var data = msg.data;
+          if (typeof data.maxZoom === 'number') d.maxZoom = Math.max(1, data.maxZoom);
+          if (typeof data.supportsTorch === 'boolean') d.supportsTorch = data.supportsTorch;
+          if (typeof data.supportsPan === 'boolean') d.supportsPan = data.supportsPan;
+          if (typeof data.evMin === 'number') d.evMin = data.evMin;
+          if (typeof data.evMax === 'number') d.evMax = data.evMax;
+          if (typeof data.batteryLevel === 'number') d.battery = data.batteryLevel;
+          if (typeof data.batteryCharging === 'boolean') d.charging = data.batteryCharging;
+          if (typeof data.torchOn === 'boolean') d.torch = data.torchOn;
+          if (typeof data.motion === 'boolean') d.motionLive = data.motion;
+          if (d.zoom > d.maxZoom) d.zoom = 1;
+          syncDeviceUi(id);
+        }
+
+        function applyDeviceStatus(msg) {
+          var id = msg.from;
+          if (!id || !msg.data) return;
+          var d = deviceState(id);
+          var data = msg.data;
+          if (typeof data.batteryLevel === 'number') d.battery = data.batteryLevel;
+          if (typeof data.batteryCharging === 'boolean') d.charging = data.batteryCharging;
+          if (typeof data.torchOn === 'boolean') d.torch = data.torchOn;
+          if (typeof data.motion === 'boolean') d.motionLive = data.motion;
+          syncDeviceUi(id);
+        }
+
+        function attachStageGestures(id) {
+          var stage = getStage(id);
+          if (!stage) return;
+          var pan = null;
+          var pinch = null;
+          var panMoved = false;
+
+          stage.addEventListener(
+            'wheel',
+            function (e) {
+              e.preventDefault();
+              var rect = stage.getBoundingClientRect();
+              zoomDigital(
+                id,
+                e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP,
+                e.clientX - rect.left,
+                e.clientY - rect.top
+              );
+            },
+            { passive: false }
+          );
+
+          stage.addEventListener('pointerdown', function (e) {
+            if (pinch) return;
+            var z = getZoom(id);
+            pan = { id: e.pointerId, x: e.clientX, y: e.clientY, tx0: z.tx, ty0: z.ty };
+            panMoved = false;
+            if (stage.setPointerCapture) {
+              try {
+                stage.setPointerCapture(e.pointerId);
+              } catch (_e) {
+                /* ignore */
+              }
+            }
+            if (z.scale > 1) stage.classList.add('panning');
+          });
+
+          stage.addEventListener('pointermove', function (e) {
+            if (!pan || pan.id !== e.pointerId || pinch) return;
+            var z = getZoom(id);
+            if (z.scale <= 1) return;
+            var dx = e.clientX - pan.x;
+            var dy = e.clientY - pan.y;
+            if (!panMoved && Math.abs(dx) + Math.abs(dy) > 4) panMoved = true;
+            z.tx = pan.tx0 + dx;
+            z.ty = pan.ty0 + dy;
+            clampZoom(id);
+            applyZoom(id);
+          });
+
+          function endPan(e) {
+            if (pan && pan.id === e.pointerId) {
+              pan = null;
+              stage.classList.remove('panning');
+            }
+          }
+          stage.addEventListener('pointerup', endPan);
+          stage.addEventListener('pointercancel', endPan);
+
+          stage.addEventListener(
+            'touchstart',
+            function (e) {
+              if (e.touches.length === 2) {
+                var t0 = e.touches[0];
+                var t1 = e.touches[1];
+                var dx = t0.clientX - t1.clientX;
+                var dy = t0.clientY - t1.clientY;
+                pinch = {
+                  dist: Math.sqrt(dx * dx + dy * dy),
+                  cx: (t0.clientX + t1.clientX) / 2,
+                  cy: (t0.clientY + t1.clientY) / 2,
+                  scale: getZoom(id).scale,
+                };
+                pan = null;
+                stage.classList.remove('panning');
+              }
+            },
+            { passive: true }
+          );
+
+          stage.addEventListener(
+            'touchmove',
+            function (e) {
+              if (!pinch || e.touches.length !== 2) return;
+              e.preventDefault();
+              var rect = stage.getBoundingClientRect();
+              var t0 = e.touches[0];
+              var t1 = e.touches[1];
+              var dx = t0.clientX - t1.clientX;
+              var dy = t0.clientY - t1.clientY;
+              var dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist === 0) return;
+              var target = pinch.scale * (dist / pinch.dist);
+              if (target < ZOOM_MIN) target = ZOOM_MIN;
+              if (target > ZOOM_MAX) target = ZOOM_MAX;
+              var z = getZoom(id);
+              var k = target / z.scale;
+              if (k !== 1) {
+                z.tx = (1 - k) * (pinch.cx - rect.left - rect.width / 2) + k * z.tx;
+                z.ty = (1 - k) * (pinch.cy - rect.top - rect.height / 2) + k * z.ty;
+                z.scale = target;
+                clampZoom(id);
+                applyZoom(id);
+              }
+            },
+            { passive: false }
+          );
+
+          stage.addEventListener('touchend', function () {
+            pinch = null;
+          });
+          stage.addEventListener('touchcancel', function () {
+            pinch = null;
+          });
+
+          var focusTimer = null;
+          stage.addEventListener('click', function (e) {
+            if (focusTimer) clearTimeout(focusTimer);
+            // Sau khi kéo-pan (khi đang zoom) thì không gửi lệnh focus — tránh
+            // camera tự lấy nét lại ngay sau khi người dùng điều khiển hướng nhìn.
+            if (panMoved) {
+              panMoved = false;
+              return;
+            }
+            var rect = stage.getBoundingClientRect();
+            var fx = (e.clientX - rect.left) / rect.width;
+            var fy = (e.clientY - rect.top) / rect.height;
+            focusTimer = setTimeout(function () {
+              setFocus(id, fx, fy);
+            }, 250);
+          });
+
+          stage.addEventListener('dblclick', function (e) {
+            if (focusTimer) {
+              clearTimeout(focusTimer);
+              focusTimer = null;
+            }
+            var z = getZoom(id);
+            if (z.scale > 1.01) {
+              resetZoom(id);
+            } else {
+              var rect = stage.getBoundingClientRect();
+              zoomDigital(id, 2, e.clientX - rect.left, e.clientY - rect.top);
+            }
+          });
+        }
+
+        // ==== Hành động điều khiển thiết bị ====
+        function applyDeviceZoom(id, ratio) {
+          var d = deviceState(id);
+          d.zoom = Math.max(1, Math.min(d.maxZoom, ratio));
+          sendDevice(id, 'zoom', { value: d.zoom });
+          syncDeviceUi(id);
+        }
+
+        function resetDeviceZoom(id) {
+          deviceState(id).zoom = 1;
+          sendDevice(id, 'zoom-reset');
+          syncDeviceUi(id);
+        }
+
+        function applyDeviceEv(id, ev) {
+          var d = deviceState(id);
+          d.ev = ev;
+          sendDevice(id, 'exposure', { value: ev });
+          syncDeviceUi(id);
+        }
+
+        function resetDeviceEv(id) {
+          deviceState(id).ev = 0;
+          sendDevice(id, 'exposure', { value: 0 });
+          syncDeviceUi(id);
+        }
+
+        function toggleTorch(id) {
+          var d = deviceState(id);
+          d.torch = !d.torch;
+          sendDevice(id, 'torch', { value: d.torch });
+          syncDeviceUi(id);
+        }
+
+        function switchDeviceCamera(id) {
+          sendDevice(id, 'switch-camera');
+        }
+
+        function takeSnapshot(id) {
+          sendDevice(id, 'snapshot');
+        }
+
+        function toggleMotionDetection(id) {
+          var d = deviceState(id);
+          d.motion = !d.motion;
+          sendDevice(id, 'motion', { value: d.motion });
+          syncDeviceUi(id);
+        }
+
+        function nudgePan(id, dx, dy) {
+          var d = deviceState(id);
+          var step = 0.2;
+          d.panX = Math.max(-1, Math.min(1, d.panX + dx * step));
+          d.panY = Math.max(-1, Math.min(1, d.panY + dy * step));
+          sendDevice(id, 'pan', { valueX: d.panX, valueY: d.panY });
+        }
+
+        function resetPan(id) {
+          var d = deviceState(id);
+          d.panX = 0;
+          d.panY = 0;
+          sendDevice(id, 'pan-reset');
+        }
+
+        function setFocus(id, x, y) {
+          sendDevice(id, 'focus', { valueX: x, valueY: y });
+        }
+
+        function resetFocus(id) {
+          sendDevice(id, 'focus-reset');
+        }
+
+        function attachPanButton(btn, id, dx, dy) {
+          var timer = null;
+          var activePointerId = null;
+
+          function nudge() {
+            nudgePan(id, dx, dy);
+          }
+
+          function stop() {
+            if (timer) {
+              clearInterval(timer);
+              timer = null;
+            }
+            btn.classList.remove('active');
+            if (activePointerId != null && btn.releasePointerCapture) {
+              try {
+                btn.releasePointerCapture(activePointerId);
+              } catch (_e) {
+                /* ignore */
+              }
+            }
+            activePointerId = null;
+            window.removeEventListener('pointerup', onWindowUp);
+            window.removeEventListener('pointercancel', onWindowUp);
+          }
+
+          function onWindowUp(e) {
+            if (activePointerId == null || e.pointerId === activePointerId) stop();
+          }
+
+          function start(e) {
+            if (e.preventDefault) e.preventDefault();
+            activePointerId = e.pointerId != null ? e.pointerId : null;
+            nudge();
+            if (timer) clearInterval(timer);
+            timer = setInterval(nudge, 300);
+            btn.classList.add('active');
+            // Bắt giữ con trỏ để nút luôn nhận được pointerup dù người dùng rê ra
+            // ngoài nút — tránh lệnh pan bị "kẹt" làm camera chạy mãi (đơ).
+            if (btn.setPointerCapture && activePointerId != null) {
+              try {
+                btn.setPointerCapture(activePointerId);
+              } catch (_e) {
+                /* ignore */
+              }
+            }
+            // Dự phòng khi trình duyệt không hỗ trợ pointer capture.
+            if (activePointerId != null) {
+              window.addEventListener('pointerup', onWindowUp);
+              window.addEventListener('pointercancel', onWindowUp);
+            }
+          }
+
+          btn.addEventListener('pointerdown', start);
+          btn.addEventListener('pointerup', stop);
+          btn.addEventListener('pointercancel', stop);
+          // Nếu trình duyệt tự thu hồi capture thì cũng dừng ngay.
+          btn.addEventListener('lostpointercapture', stop);
+
+          // Hỗ trợ bàn phím (giữ Enter / Space để di chuyển liên tục).
+          btn.addEventListener('keydown', function (e) {
+            if (e.repeat || timer) return;
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault();
+              start({ preventDefault: function () {}, pointerId: null });
+            }
+          });
+          btn.addEventListener('keyup', function (e) {
+            if (e.key === ' ' || e.key === 'Enter') stop();
+          });
+        }
+
+        // ==== Snapshot (JPEG gửi về từ thiết bị) ====
+        function showSnapshot(msg) {
+          var id = msg.from;
+          if (!id || !msg.data || !msg.data.jpegBase64) return;
+          var cell = getCell(id);
+          if (!cell) return;
+          var body = cell.querySelector('.camera-cell-body');
+          if (!body) return;
+          var existing = cell.querySelector('.snapshot-preview');
+          if (existing) existing.remove();
+          var wrap = document.createElement('div');
+          wrap.className = 'snapshot-preview';
+          wrap.innerHTML =
+            '<button class="snapshot-close" type="button" title="' +
+            HuzApp.t('camera.snapshot.close') +
+            '" aria-label="' +
+            HuzApp.t('camera.snapshot.close') +
+            '">×</button>' +
+            '<img alt="snapshot" src="data:image/jpeg;base64,' +
+            msg.data.jpegBase64 +
+            '"/>';
+          wrap
+            .querySelector('.snapshot-close')
+            .addEventListener('click', function () {
+              wrap.remove();
+            });
+          body.appendChild(wrap);
+        }
+
+        function cleanupDevice(id) {
+          delete deviceStates[id];
+          delete zoomStates[id];
+        }
+
         function createCell(device) {
           if (getCell(device.id)) return;
 
@@ -417,12 +1278,73 @@
           var body = document.createElement('div');
           body.className = 'camera-cell-body';
           body.innerHTML =
+            '<div class="zoom-stage">' +
             '<video playsinline autoplay muted></video>' +
+            '</div>' +
             '<div class="camera-cell-overlay">' +
             '<div class="spinner"></div>' +
             '<span class="overlay-text">' +
             HuzApp.t('camera.overlay.connecting') +
             '</span>' +
+            '</div>' +
+            '<div class="camera-controls" role="group" aria-label="' +
+            HuzApp.t('camera.zoom.title') +
+            '">' +
+            '<button class="camera-zoom-btn" type="button" data-zoom="out" title="' +
+            HuzApp.t('camera.zoom.out') +
+            '" aria-label="' +
+            HuzApp.t('camera.zoom.out') +
+            '">−</button>' +
+            '<span class="camera-zoom-pct">100%</span>' +
+            '<button class="camera-zoom-btn" type="button" data-zoom="in" title="' +
+            HuzApp.t('camera.zoom.in') +
+            '" aria-label="' +
+            HuzApp.t('camera.zoom.in') +
+            '">＋</button>' +
+            '<button class="camera-zoom-btn" type="button" data-zoom="reset" title="' +
+            HuzApp.t('camera.zoom.reset') +
+            '" aria-label="' +
+            HuzApp.t('camera.zoom.reset') +
+            '">⟲</button>' +
+            '</div>' +
+            '<div class="ptz-pad" role="group" aria-label="' +
+            HuzApp.t('camera.ptz.title') +
+            '">' +
+            '<button class="ptz-btn ptz-up" type="button" data-ptz="up" title="' +
+            HuzApp.t('camera.ptz.up') +
+            '" aria-label="' +
+            HuzApp.t('camera.ptz.up') +
+            '">' +
+            PTZ_ICONS.up +
+            '</button>' +
+            '<button class="ptz-btn ptz-left" type="button" data-ptz="left" title="' +
+            HuzApp.t('camera.ptz.left') +
+            '" aria-label="' +
+            HuzApp.t('camera.ptz.left') +
+            '">' +
+            PTZ_ICONS.left +
+            '</button>' +
+            '<button class="ptz-btn ptz-home" type="button" data-ptz="home" title="' +
+            HuzApp.t('camera.ptz.home') +
+            '" aria-label="' +
+            HuzApp.t('camera.ptz.home') +
+            '">' +
+            PTZ_ICONS.home +
+            '</button>' +
+            '<button class="ptz-btn ptz-right" type="button" data-ptz="right" title="' +
+            HuzApp.t('camera.ptz.right') +
+            '" aria-label="' +
+            HuzApp.t('camera.ptz.right') +
+            '">' +
+            PTZ_ICONS.right +
+            '</button>' +
+            '<button class="ptz-btn ptz-down" type="button" data-ptz="down" title="' +
+            HuzApp.t('camera.ptz.down') +
+            '" aria-label="' +
+            HuzApp.t('camera.ptz.down') +
+            '">' +
+            PTZ_ICONS.down +
+            '</button>' +
             '</div>';
 
           badgeStates[device.id] = { key: 'camera.badge.waiting', kind: 'warn' };
@@ -432,17 +1354,152 @@
           cell.appendChild(head);
           cell.appendChild(body);
 
+          // Thanh điều khiển thiết bị (zoom/EV/torch/camera/snapshot/motion/focus)
+          var controls = document.createElement('div');
+          controls.className = 'camera-cell-controls';
+          controls.innerHTML =
+            '<div class="ctrl-group">' +
+            '<span class="ctrl-label">' +
+            HuzApp.t('camera.dev.zoom') +
+            '</span>' +
+            '<input class="ctrl-slider ctrl-zoom" type="range" min="1" max="1" step="0.1" value="1" aria-label="' +
+            HuzApp.t('camera.dev.zoom') +
+            '"/>' +
+            '<span class="ctrl-value ctrl-zoom-val">1.0x</span>' +
+            '<button class="ctrl-btn" type="button" data-dev="zoom-reset" title="' +
+            HuzApp.t('camera.dev.reset') +
+            '">' +
+            HuzApp.t('camera.dev.reset') +
+            '</button>' +
+            '</div>' +
+            '<div class="ctrl-group">' +
+            '<span class="ctrl-label">EV</span>' +
+            '<input class="ctrl-slider ctrl-ev" type="range" min="0" max="0" step="1" value="0" aria-label="EV"/>' +
+            '<span class="ctrl-value ctrl-ev-val">0</span>' +
+            '<button class="ctrl-btn" type="button" data-dev="ev-reset" title="' +
+            HuzApp.t('camera.dev.reset') +
+            '">' +
+            HuzApp.t('camera.dev.reset') +
+            '</button>' +
+            '</div>' +
+            '<div class="ctrl-group">' +
+            '<button class="ctrl-btn" type="button" data-dev="torch" title="' +
+            HuzApp.t('camera.dev.torch') +
+            '">' +
+            DEV_ICONS.torch +
+            '<span>' +
+            HuzApp.t('camera.dev.torch') +
+            '</span></button>' +
+            '<button class="ctrl-btn" type="button" data-dev="switch" title="' +
+            HuzApp.t('camera.dev.switch') +
+            '">' +
+            DEV_ICONS.switch +
+            '<span>' +
+            HuzApp.t('camera.dev.switch') +
+            '</span></button>' +
+            '<button class="ctrl-btn" type="button" data-dev="snapshot" title="' +
+            HuzApp.t('camera.dev.snapshot') +
+            '">' +
+            DEV_ICONS.snapshot +
+            '<span>' +
+            HuzApp.t('camera.dev.snapshot') +
+            '</span></button>' +
+            '<button class="ctrl-btn" type="button" data-dev="motion" title="' +
+            HuzApp.t('camera.dev.motion') +
+            '">' +
+            DEV_ICONS.motion +
+            '<span>' +
+            HuzApp.t('camera.dev.motion') +
+            '</span></button>' +
+            '<button class="ctrl-btn" type="button" data-dev="focus-reset" title="' +
+            HuzApp.t('camera.dev.focus') +
+            '">' +
+            DEV_ICONS.focus +
+            '<span>' +
+            HuzApp.t('camera.dev.focus') +
+            '</span></button>' +
+            '</div>' +
+            '<div class="ctrl-group ctrl-tail">' +
+            '<span class="motion-badge hidden">' +
+            HuzApp.t('camera.motion') +
+            '</span>' +
+            '<span class="battery-badge hidden"></span>' +
+            '</div>';
+          cell.appendChild(controls);
+
           head
             .querySelector('[data-action="reconnect"]')
             .addEventListener('click', function () {
               reconnectDevice(device);
             });
 
+          // Nút zoom kỹ thuật số (phía viewer)
+          body.querySelector('[data-zoom="in"]').addEventListener('click', function () {
+            zoomDigital(device.id, ZOOM_STEP);
+          });
+          body.querySelector('[data-zoom="out"]').addEventListener('click', function () {
+            zoomDigital(device.id, 1 / ZOOM_STEP);
+          });
+          body.querySelector('[data-zoom="reset"]').addEventListener('click', function () {
+            resetZoom(device.id);
+          });
+
+          // Bàn pan/tilt thiết bị (giữ nút để di chuyển liên tục)
+          var panDirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+          Array.prototype.forEach.call(body.querySelectorAll('[data-ptz]'), function (btn) {
+            var key = btn.getAttribute('data-ptz');
+            if (key === 'home') {
+              btn.addEventListener('click', function () {
+                resetPan(device.id);
+              });
+              return;
+            }
+            var dir = panDirs[key];
+            if (dir) attachPanButton(btn, device.id, dir[0], dir[1]);
+          });
+
+          // Thanh điều khiển thiết bị
+          var zoomSlider = controls.querySelector('.ctrl-zoom');
+          zoomSlider.addEventListener('input', function () {
+            applyDeviceZoom(device.id, parseFloat(zoomSlider.value));
+          });
+          controls.querySelector('[data-dev="zoom-reset"]').addEventListener('click', function () {
+            resetDeviceZoom(device.id);
+          });
+          var evSlider = controls.querySelector('.ctrl-ev');
+          evSlider.addEventListener('input', function () {
+            applyDeviceEv(device.id, parseInt(evSlider.value, 10) || 0);
+          });
+          controls.querySelector('[data-dev="ev-reset"]').addEventListener('click', function () {
+            resetDeviceEv(device.id);
+          });
+          controls.querySelector('[data-dev="torch"]').addEventListener('click', function () {
+            toggleTorch(device.id);
+          });
+          controls.querySelector('[data-dev="switch"]').addEventListener('click', function () {
+            switchDeviceCamera(device.id);
+          });
+          controls.querySelector('[data-dev="snapshot"]').addEventListener('click', function () {
+            takeSnapshot(device.id);
+          });
+          controls.querySelector('[data-dev="motion"]').addEventListener('click', function () {
+            toggleMotionDetection(device.id);
+          });
+          controls.querySelector('[data-dev="focus-reset"]').addEventListener('click', function () {
+            resetFocus(device.id);
+          });
+
+          requestCapabilities(device.id);
+
           gridEl.appendChild(cell);
+
+          // Sau khi cell đã vào DOM, đảm bảo gesture đã gắn (getStage dựa trên getCell)
+          attachStageGestures(device.id);
         }
 
         function removeCell(id) {
           closePeerConnection(id);
+          cleanupDevice(id);
           delete streamingIds[id];
           delete badgeStates[id];
           delete overlayKeys[id];
@@ -610,6 +1667,21 @@
 
             if (msg.type === 'error') {
               setStatus(wsErrorKey(msg.code), wsConnected);
+              return;
+            }
+
+            if (msg.type === 'capabilities') {
+              applyCapabilities(msg);
+              return;
+            }
+
+            if (msg.type === 'device-status') {
+              applyDeviceStatus(msg);
+              return;
+            }
+
+            if (msg.type === 'snapshot') {
+              showSnapshot(msg);
               return;
             }
 

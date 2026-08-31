@@ -18,6 +18,7 @@
         </div>
         <div class="row-actions">
           <a class="btn btn-ghost" href="/devices.html" data-i18n="dash.networkDevices">Network Devices</a>
+          <a class="btn btn-ghost" href="/phone.html" data-i18n="dash.phoneRemote">Phone Remote</a>
           <a class="btn btn-primary" href="/camera.html" data-i18n="dash.viewCamera">View cameras</a>
         </div>
       </div>
@@ -112,11 +113,16 @@
             <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px" data-i18n="dash.sysinfo.security">Security</dt>
             <dd class="text-2" style="margin: 0">Session cookie · scrypt · rate limit</dd>
             <dt class="text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 10px" data-i18n="dash.sysinfo.ui">UI version</dt>
-            <dd class="text-2" style="margin: 0">2026.1</dd>
+            <dd class="text-2 mono" style="margin: 0" id="serverUIVersion">2026.1</dd>
           </dl>
         </div>
       </div>
     </main>
+
+    <footer class="site-footer">
+      <span data-i18n="footer.version">Server version</span>
+      <span class="mono" id="footerVersion">–</span>
+    </footer>
 
     <script src="/js/i18n.js"></script>
     <script src="/js/common.js"></script>
@@ -186,6 +192,7 @@
               if (info.arch) osLabel = osLabel ? osLabel + ' · ' + info.arch : info.arch;
               set('serverOs', osLabel || '–');
               set('serverVersion', info.version || '–');
+              set('serverUIVersion', info.version || '–');
               set(
                 'serverGo',
                 (info.go_version || '–') +

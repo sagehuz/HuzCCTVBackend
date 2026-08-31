@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"huzbackend-go/internal/auth"
+	"huzbackend-go/internal/cli"
 	"huzbackend-go/internal/config"
 	"huzbackend-go/internal/scan"
 	"huzbackend-go/internal/signal"
@@ -23,11 +24,11 @@ import (
 )
 
 type Handler struct {
-	cfg    *config.Config
-	auth   *auth.AuthService
-	scanner *scan.Scanner
-	hub    *signal.Hub
-	static fs.FS
+	cfg       *config.Config
+	auth      *auth.AuthService
+	scanner   *scan.Scanner
+	hub       *signal.Hub
+	static    fs.FS
 	startedAt time.Time
 }
 
@@ -38,6 +39,7 @@ func NewHandler(cfg *config.Config, authSvc *auth.AuthService, scanner *scan.Sca
 func (h *Handler) Mux() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", h.health)
+	mux.HandleFunc("/api/version", h.version)
 	mux.HandleFunc("/api/auth/login", h.login)
 	mux.HandleFunc("/api/auth/logout", h.logout)
 	mux.HandleFunc("/api/auth/me", h.requireAuth(h.me))
@@ -52,6 +54,22 @@ func (h *Handler) Mux() http.Handler {
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"code": "ok", "message": "Server is running successfully"})
+}
+
+// version reports the running server version. It is public (no sign-in
+// required) so every page — including the login page — can show which
+// version the user is running in the footer.
+func (h *Handler) version(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"version": cli.Version,
+		"os":      runtime.GOOS,
+		"arch":    runtime.GOARCH,
+	})
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +210,7 @@ func (h *Handler) serverInfo(w http.ResponseWriter, r *http.Request) {
 		"arch":       runtime.GOARCH,
 		"go_version": runtime.Version(),
 		"num_cpu":    runtime.NumCPU(),
-		"version":    "2026.1",
+		"version":    cli.Version,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(info)
@@ -241,7 +259,7 @@ func (h *Handler) serveStatic(w http.ResponseWriter, r *http.Request) {
 		path = "index.html"
 	}
 	// Pages that require sign-in.
-	if path == "index.html" || path == "camera.html" || path == "devices.html" {
+	if path == "index.html" || path == "camera.html" || path == "devices.html" || path == "phone.html" {
 		if _, _, err := h.auth.CurrentUserFromRequest(r); err != nil {
 			redirectPath := url.QueryEscape(r.URL.Path)
 			http.Redirect(w, r, "/login.html?next="+redirectPath, http.StatusFound)

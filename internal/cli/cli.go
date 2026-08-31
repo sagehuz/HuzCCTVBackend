@@ -11,7 +11,7 @@ import (
 )
 
 // Version is displayed by the `huzbackend version` command.
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 // Run executes a CLI command and returns the exit code for main().
 func Run(args []string) int {

@@ -1,0 +1,44 @@
+# Huz CCTV Server — systemd system unit (production)
+#
+# Install:
+#   sudo cp deploy/huzcctv.service /etc/systemd/system/huzcctv.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now huzcctv
+#
+# Logs:
+#   sudo journalctl -u huzcctv -f
+#
+# Notes:
+#   - The server is deployed under /opt/huzcctv (change the paths if needed).
+#   - The binary chdirs to its own directory, so .env and data/ are read from
+#     /opt/huzcctv regardless of WorkingDirectory.
+#   - 'serve' runs the server in the foreground; systemd keeps it alive
+#     (Restart=always) and captures logs in the journal.
+
+[Unit]
+Description=Huz CCTV Server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=huzcctv
+Group=huzcctv
+WorkingDirectory=/opt/huzcctv
+ExecStart=/opt/huzcctv/huzbackend-linux-amd64 serve
+Restart=always
+RestartSec=3
+LimitNOFILE=65536
+
+# Hardening (optional but recommended for a headless production server)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/huzcctv
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

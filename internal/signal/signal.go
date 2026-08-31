@@ -21,6 +21,8 @@ type Client struct {
 	Name      string
 	User      string
 	DeviceID  string
+	Kind      string
+	Model     string
 	AuthToken string
 	ID        string
 	alive     bool
@@ -144,6 +146,14 @@ func (h *Hub) handleRegister(client *Client, payload map[string]any, r *http.Req
 			client.Name = name
 		}
 	}
+	client.Kind, _ = payload["kind"].(string)
+	if model, ok := payload["model"].(string); ok {
+		model = strings.TrimSpace(model)
+		if len(model) > 64 {
+			model = model[:64]
+		}
+		client.Model = model
+	}
 	if role == "device" {
 		deviceID, _ := payload["deviceId"].(string)
 		deviceID = strings.TrimSpace(deviceID)
@@ -247,7 +257,7 @@ func (h *Hub) broadcastDeviceList() {
 	payload := map[string]any{"type": "device-list", "devices": []map[string]any{}}
 	list := make([]map[string]any, 0, len(clients))
 	for _, c := range clients {
-		list = append(list, map[string]any{"id": c.ID, "name": c.Name, "deviceId": c.DeviceID})
+		list = append(list, map[string]any{"id": c.ID, "name": c.Name, "deviceId": c.DeviceID, "kind": c.Kind, "model": c.Model})
 	}
 	payload["devices"] = list
 	for _, id := range viewerIDs {

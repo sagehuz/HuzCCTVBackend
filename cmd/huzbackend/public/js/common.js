@@ -10,11 +10,13 @@
 
   var LOGIN_PATH = '/login.html';
   var STORAGE_KEY = 'huz_authed';
+  var DONATE_URL = 'https://www.sagehuz.com/donate/';
 
   var NAV_ITEMS = [
     { href: '/index.html', tKey: 'nav.dashboard', icon: 'grid' },
     { href: '/devices.html', tKey: 'nav.network', icon: 'network' },
     { href: '/camera.html', tKey: 'nav.camera', icon: 'video' },
+    { href: '/phone.html', tKey: 'nav.phone', icon: 'phone' },
   ];
 
   var ICONS = {
@@ -24,6 +26,10 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="6" height="6" rx="1.5"/><rect x="16" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="2" width="6" height="6" rx="1.5"/><rect x="9" y="16" width="6" height="6" rx="1.5"/><path d="M5 15v2a2 2 0 0 0 2 2h4"/><path d="M19 15v2a2 2 0 0 1-2 2h-4"/></svg>',
     video:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/></svg>',
+    menu:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>',
+    chevron:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
     logout:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
     refresh:
@@ -36,6 +42,10 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>',
     user:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>',
+    heart:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+    phone:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg>',
   };
 
   /* ---------- Utilities ---------- */
@@ -115,6 +125,22 @@
   }
 
   /* ---------- Header ---------- */
+  /* Donate button shown in the header on every page. */
+  function donateLink() {
+    var label = t('header.donate.text');
+    return (
+      '<a class="btn btn-donate btn-sm" href="' +
+      DONATE_URL +
+      '" target="_blank" rel="noopener noreferrer" title="' +
+      esc(label) +
+      '">' +
+      icon('heart') +
+      '<span>' +
+      esc(label) +
+      '</span></a>'
+    );
+  }
+
   function currentNav() {
     var path = location.pathname;
     for (var i = 0; i < NAV_ITEMS.length; i++) {
@@ -191,10 +217,24 @@
       '<span class="brand-sub">' +
       t('header.brand.sub') +
       '</span></span></a>' +
-      '<nav class="header-nav">' +
+      '<div class="menu-wrap" id="navMenu">' +
+      '<button class="menu-btn" id="navMenuBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="' +
+      t('header.menu') +
+      '">' +
+      icon('menu') +
+      '<span>' +
+      t('header.menu') +
+      '</span>' +
+      icon('chevron') +
+      '</button>' +
+      '<div class="menu-panel" id="navMenuPanel" hidden>' +
+      '<nav class="menu-nav">' +
       navHtml +
       '</nav>' +
+      '</div>' +
+      '</div>' +
       '<div class="header-actions">' +
+      donateLink() +
       languageSelect() +
       actionsHtml +
       '</div></div>';
@@ -218,6 +258,28 @@
         }
         localStorage.removeItem(STORAGE_KEY);
         location.href = LOGIN_PATH;
+      });
+    }
+
+    var menuBtn = document.getElementById('navMenuBtn');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var panel = document.getElementById('navMenuPanel');
+        if (panel && !panel.hidden) {
+          closeNavMenu();
+        } else if (panel) {
+          if (window.innerWidth <= 720) {
+            var headerEl = document.querySelector('.site-header');
+            panel.style.top =
+              (headerEl ? headerEl.getBoundingClientRect().height + 8 : 72) + 'px';
+          } else {
+            panel.style.top = '';
+          }
+          panel.hidden = false;
+          menuBtn.setAttribute('aria-expanded', 'true');
+          menuBtn.classList.add('open');
+        }
       });
     }
   }
@@ -263,6 +325,28 @@
     return parts.length ? parts.join(' ') : t('dash.uptime.sec', { n: 0 });
   }
 
+  /* ---------- Server version in the footer ---------- */
+  function renderVersion() {
+    var el = document.getElementById('footerVersion');
+    if (!el) return;
+    api('/api/version')
+      .then(function (info) {
+        if (!info || !info.version) return;
+        var label = 'v' + info.version;
+        if (info.os && info.arch) label += ' · ' + info.os + '/' + info.arch;
+        el.textContent = label;
+      })
+      .catch(function () {
+        /* keep the placeholder */
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderVersion);
+  } else {
+    renderVersion();
+  }
+
   /* ---------- Page init ---------- */
   var lastUser = null;
 
@@ -294,6 +378,30 @@
   if (document.addEventListener) {
     document.addEventListener('huz:langchange', function () {
       renderHeader(lastUser);
+    });
+  }
+
+  /* Close the collapsed nav menu when clicking outside or pressing Escape. */
+  function closeNavMenu() {
+    var panel = document.getElementById('navMenuPanel');
+    var btn = document.getElementById('navMenuBtn');
+    if (panel) panel.hidden = true;
+    if (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      btn.classList.remove('open');
+    }
+  }
+
+  if (document.addEventListener) {
+    document.addEventListener('click', function (e) {
+      var panel = document.getElementById('navMenuPanel');
+      if (!panel || panel.hidden) return;
+      var btn = document.getElementById('navMenuBtn');
+      if (btn && (btn.contains(e.target) || panel.contains(e.target))) return;
+      closeNavMenu();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeNavMenu();
     });
   }
 

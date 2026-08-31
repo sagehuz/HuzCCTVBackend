@@ -11,6 +11,7 @@ import (
 	"os"
 	osSignal "os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -81,6 +82,8 @@ func chdirToExecDir() {
 }
 
 func runServer() {
+	log.Printf("Huz CCTV Server %s (%s/%s) starting", cli.Version, runtime.GOOS, runtime.GOARCH)
+
 	cfg := config.Load()
 
 	storeSvc, err := store.NewStore(cfg.DBPath)
