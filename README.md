@@ -11,6 +11,10 @@ The web dashboard is **multilingual** (English by default, Vietnamese available)
 
 > 📖 **For end users:** a complete English user guide (installation, downloading from SourceForge.net, first sign-in, camera setup, CLI reference, troubleshooting…) is available in **[USER_GUIDE.md](USER_GUIDE.md)**.
 
+> 🎥 **Video:** [video how to fast setup on Mac Apple Silicon (for low end user)](https://www.youtube.com/watch?v=vJe79mhJLow)
+
+
+
 ## Quick start
 
 1. Build binaries: `make build-all`
