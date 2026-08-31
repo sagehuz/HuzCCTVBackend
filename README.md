@@ -1,5 +1,8 @@
 # Huz CCTV Server
 
+> 📱 **Android client:** the Huz CCTV Android app is available at
+> **[HuzCCTV-Android](https://github.com/sagehuz/HuzCCTV-Android)**.
+
 Go backend for Huz CCTV that serves the embedded web app, exposes REST APIs, handles WebSocket signaling, and scans local LAN devices.
 
 The web dashboard is **multilingual** (English by default, Vietnamese available) with a language switcher in the header. The CLI is fully in English.
